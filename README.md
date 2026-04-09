@@ -31,6 +31,23 @@ A hands-on playbook documenting my journey into blockchain infrastructure engine
     networking/ → ports, TCP/UDP, RPC  
     nodes/ → node setup, configs, syncing  
     debugging/ → troubleshooting workflows  
+    assets/ → screenshots and supporting evidence
+
+---
+
+## 🛠️ Node Operations
+
+### Nethermind
+
+- [Nethermind Install and Service Setup](systemd/nethermind-install-and-service-setup.md)
+- [Nethermind Operator Checks](systemd/nethermind-operator-checks.md)
+- [Nethermind Screenshot Evidence](assets/screenshots/nethermind/README.md)
+
+These documents cover:
+- installing Nethermind on Ubuntu WSL2
+- configuring Nethermind as a `systemd` service
+- verifying logs, ports, disk usage, and process health
+- documenting proof-of-life screenshots from the live environment
 
 ---
 
