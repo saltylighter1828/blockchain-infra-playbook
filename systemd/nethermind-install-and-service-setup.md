@@ -183,7 +183,23 @@ These checks help confirm:
 
 ---
 
-## 15. What I learned
+## 15. Screenshots
+
+### Service status
+![Nethermind service status](../assets/screenshots/nethermind/systemctl-status.png)
+
+### Recent logs
+![Nethermind recent logs](../assets/screenshots/nethermind/journalctl-logs.png)
+
+### Port check
+![Nethermind ports](../assets/screenshots/nethermind/ports-check.png)
+
+### Disk and data usage
+![Nethermind disk and data usage](../assets/screenshots/nethermind/disk-and-data-usage.png)
+
+---
+
+## 16. What I learned
 
 - how to install Nethermind on Ubuntu with `apt`
 - how to verify a binary with `--version` and `--help`
@@ -196,7 +212,7 @@ These checks help confirm:
 
 ---
 
-## 16. Outcome
+## 17. Outcome
 
 At the end of this setup:
 - Nethermind was installed successfully
