@@ -1,46 +1,31 @@
-# Full Ethereum Node Setup on WSL Ubuntu
-## Nethermind + Lighthouse + systemd + JWT (Amended and Debugged)
+# Lighthouse Install and Setup on WSL Ubuntu
+## Consensus Client Setup for Nethermind
 
-This document records the full setup used to run a **full Ethereum node** on **Ubuntu under WSL2**, using:
-
-- **Nethermind** as the execution client
-- **Lighthouse** as the consensus client
-- **systemd** for service management
-- a shared **JWT secret** for Engine API authentication
-
-It also includes the important **debugging fixes and amendments** discovered during setup.
+This document records the commands used to install Lighthouse as the Ethereum consensus client on Ubuntu running under WSL2, connect it to Nethermind through the Engine API, debug the setup, and finally run Lighthouse as a `systemd` service.
 
 ---
 
 ## Purpose
 
-A post-Merge Ethereum node requires **both**:
+My current setup already includes:
 
-- an **execution client** such as Nethermind
-- a **consensus client** such as Lighthouse
+- **Nethermind** as the execution client
+- Ubuntu on WSL2
+- `systemd` for service management
 
-Running Nethermind alone will often produce messages like:
-
-- `Waiting for Forkchoice message from Consensus Layer`
-- `Not receiving ForkChoices from the consensus client that are required to sync`
-
-This is expected until a consensus client is installed and connected through the Engine API.
+Nethermind is running correctly, but execution-only mode is not enough for a full post-Merge Ethereum node. Lighthouse provides the **consensus layer** and communicates with Nethermind through the **Engine API** using a shared JWT secret.
 
 ---
 
 ## Environment
 
-- Host OS: Windows 11 Pro
+- Host OS: Windows 11
 - Linux environment: Ubuntu on WSL2
 - Service manager: `systemd`
 - Execution client: Nethermind
 - Consensus client: Lighthouse
 - Execution endpoint: `http://127.0.0.1:8551`
-- JSON-RPC endpoint: `http://127.0.0.1:8545`
-- P2P ports:
-  - Nethermind: `30303`
-  - Lighthouse: `9000`
-- JWT secret path: `/secrets/jwt.hex`
+- Shared JWT secret path: `/secrets/jwt.hex`
 
 ---
 
@@ -49,149 +34,17 @@ This is expected until a consensus client is installed and connected through the
     sudo apt update && sudo apt upgrade -y
     sudo apt install -y curl wget git jq unzip tar openssl
 
-These tools are used for downloads, archive extraction, JSON handling, and generating the JWT secret.
+These tools are used for downloads, archive extraction, and verification.
 
 ---
 
-## 2. Create the Nethermind service user
+## 2. Download and install Lighthouse
 
-    sudo useradd -m -s /bin/bash nethermind
+### Important amendment
 
-This creates a dedicated Linux user for Nethermind.
+The generic URL using `latest/download/lighthouse-x86_64-unknown-linux-gnu.tar.gz` did **not** work. It downloaded an invalid tiny file instead of the real archive.
 
----
-
-## 3. Increase file descriptor limits for Nethermind
-
-Create a dedicated limits file:
-
-    sudo bash -c 'echo "nethermind soft nofile 100000" > /etc/security/limits.d/nethermind.conf'
-    sudo bash -c 'echo "nethermind hard nofile 100000" >> /etc/security/limits.d/nethermind.conf'
-
-This helps prevent `too many open files` issues for a network-heavy node.
-
----
-
-## 4. Create the Nethermind environment file
-
-Create the file as the `nethermind` user:
-
-    sudo -u nethermind bash -c 'cat > /home/nethermind/.env <<EOF
-    NETHERMIND_CONFIG="mainnet"
-    NETHERMIND_HEALTHCHECKSCONFIG_ENABLED="true"
-    EOF'
-
-Then secure it:
-
-    sudo chown nethermind:nethermind /home/nethermind/.env
-    sudo chmod 600 /home/nethermind/.env
-
-Important amendment:
-- the `.env` file should **not** remain world-readable
-- final permissions should be:
-
-    -rw------- 1 nethermind nethermind /home/nethermind/.env
-
----
-
-## 5. Create the JWT secret file
-
-    sudo mkdir -p /secrets
-    openssl rand -hex 32 | tr -d "\n" | sudo tee /secrets/jwt.hex
-    sudo chmod 600 /secrets/jwt.hex
-
-This file is used for Engine API authentication between Nethermind and Lighthouse.
-
----
-
-## 6. Configure Nethermind to use the JWT secret
-
-Edit the Nethermind environment file:
-
-    sudo -u nethermind nano /home/nethermind/.env
-
-Add this line:
-
-    NETHERMIND_JSONRPCCONFIG_JWTSECRETFILE="/secrets/jwt.hex"
-
-Then restart Nethermind:
-
-    sudo systemctl restart nethermind
-    sudo systemctl status nethermind --no-pager
-
-Important amendment:
-- `daemon-reload` is **not required** when only changing `.env`
-- it is only needed when changing a `.service` file
-
----
-
-## 7. Create the Nethermind systemd service
-
-Create the service file:
-
-    sudo tee /etc/systemd/system/nethermind.service > /dev/null <<'EOF'
-    [Unit]
-    Description=Nethermind node
-    Documentation=https://docs.nethermind.io
-    After=network.target
-
-    [Service]
-    User=nethermind
-    Group=nethermind
-    EnvironmentFile=/home/nethermind/.env
-    WorkingDirectory=/home/nethermind
-    ExecStart=/usr/bin/nethermind --data-dir /home/nethermind/data
-    Restart=on-failure
-    LimitNOFILE=1000000
-
-    [Install]
-    WantedBy=multi-user.target
-    EOF
-
-Then reload and start:
-
-    sudo systemctl daemon-reload
-    sudo systemctl enable nethermind
-    sudo systemctl start nethermind
-    sudo systemctl status nethermind --no-pager
-
-Important amendment:
-- `WantedBy=multi-user.target` is preferred over `default.target`
-
----
-
-## 8. Verify Nethermind before adding Lighthouse
-
-Check process:
-
-    ps aux | grep nethermind
-
-Check ports:
-
-    ss -tulpn | grep -E '8545|8551|30303'
-
-Check RPC:
-
-    curl -X POST http://localhost:8545 \
-      -H "Content-Type: application/json" \
-      -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
-
-Early on, a result like:
-
-    {"jsonrpc":"2.0","result":"0x0","id":1}
-
-is acceptable and simply means the node is alive but not yet synced.
-
----
-
-## 9. Download and install Lighthouse
-
-Important amendment:
-- the generic URL using `latest/download/lighthouse-x86_64-unknown-linux-gnu.tar.gz` did **not** work
-- it downloaded a tiny invalid file instead of a tarball
-- the working install used the actual versioned filename
-
-Use:
+The working install used the versioned release tarball.
 
     cd /tmp
     curl -LO https://github.com/sigp/lighthouse/releases/download/v8.1.3/lighthouse-v8.1.3-x86_64-unknown-linux-gnu.tar.gz
@@ -209,7 +62,7 @@ Expected output includes something like:
 
 ---
 
-## 10. Create a dedicated Lighthouse service user
+## 3. Create a dedicated Lighthouse user and data directory
 
     sudo useradd -m -s /bin/bash lighthouse
     sudo mkdir -p /var/lib/lighthouse
@@ -219,72 +72,54 @@ This creates a dedicated Linux user and persistent data directory for Lighthouse
 
 ---
 
-## 11. Fix JWT access for both Nethermind and Lighthouse
+## 4. Ensure Lighthouse can read the shared JWT secret
 
-This was one of the most important debugging amendments.
+Lighthouse and Nethermind both need to read the same JWT secret file:
+
+    /secrets/jwt.hex
 
 ### Problem discovered
 
-If `/secrets/jwt.hex` is:
+If the file is owned like this:
 
     -rw------- 1 root root /secrets/jwt.hex
 
-then neither `nethermind` nor `lighthouse` can read it.
+then Lighthouse cannot read it.
 
-If it is changed to:
+### Initial check
 
-    -rw-r----- 1 root lighthouse /secrets/jwt.hex
+    sudo -u lighthouse test -r /secrets/jwt.hex && echo readable || echo NOT_readable
 
-then Lighthouse can read it, but Nethermind may lose access.
+### Clean final fix
 
-### Final clean fix
-
-Create a shared group:
+A shared group was created so both `nethermind` and `lighthouse` can read the file without making it public.
 
     sudo groupadd jwtreaders
-
-Add both service users:
-
     sudo usermod -aG jwtreaders nethermind
     sudo usermod -aG jwtreaders lighthouse
-
-Set file ownership and permissions:
-
     sudo chown root:jwtreaders /secrets/jwt.hex
     sudo chmod 640 /secrets/jwt.hex
 
-Verify group membership:
-
-    id nethermind
-    id lighthouse
-
-Verify file access:
+Verify:
 
     sudo -u nethermind test -r /secrets/jwt.hex && echo nethermind_readable || echo nethermind_NOT_readable
     sudo -u lighthouse test -r /secrets/jwt.hex && echo lighthouse_readable || echo lighthouse_NOT_readable
 
-Final desired state:
+Expected final state:
 
-- file group = `jwtreaders`
-- both service users belong to `jwtreaders`
 - both users can read the file
 - file is not world-readable
-
-Expected file permissions:
+- file permissions look like:
 
     -rw-r----- 1 root jwtreaders /secrets/jwt.hex
 
-After changing group membership, restart Nethermind so the running process picks up the new group membership:
-
-    sudo systemctl restart nethermind
-
 ---
 
-## 12. Manually test Lighthouse before creating the service
+## 5. Manually test Lighthouse before creating the service
 
-Important amendment:
-- Lighthouse was manually tested first before converting it to a systemd service
-- this made debugging much easier
+### Important amendment
+
+Lighthouse was tested manually first before converting it into a `systemd` service. This made debugging much easier.
 
 Run:
 
@@ -295,51 +130,58 @@ Run:
       --datadir /var/lib/lighthouse \
       --checkpoint-sync-url https://mainnet.checkpoint.sigp.io
 
-Expected good signs:
+### What this does
 
-- Lighthouse starts successfully
-- checkpoint sync begins
-- no JWT authentication errors
-- peers connect
-- blocks begin arriving
+- `beacon_node` starts the consensus client
+- `--execution-endpoint` points to Nethermind’s Engine API
+- `--execution-jwt` uses the shared JWT secret
+- `--datadir` stores Lighthouse data in a dedicated directory
+- `--checkpoint-sync-url` speeds up sync significantly
 
-Typical healthy messages include:
+### Good signs observed
 
+Healthy output included:
+
+- `Lighthouse started`
+- `Configured network`
 - `Starting checkpoint sync`
 - `Loaded checkpoint block and state`
 - `Beacon chain initialized`
 - `New block received`
 
-Typical expected warnings during early sync include:
+### Expected warnings during early sync
+
+These warnings were seen and are normal during setup:
 
 - `Head is optimistic`
 - `Downloading historical blocks`
+- occasional backfill sync pauses or retries
 
-These are normal while Nethermind is still syncing.
+This is expected while Nethermind is still syncing the execution layer.
 
 ---
 
-## 13. Stop the manual Lighthouse process before converting to systemd
+## 6. Stop the manual Lighthouse process before switching to systemd
 
-Important amendment:
-- the manual Lighthouse process must be stopped before creating the systemd service
-- otherwise:
-  - port `9000` may already be in use
-  - the datadir may already be locked
+### Important amendment
+
+Before creating the service, the manually running Lighthouse process must be stopped.
 
 Stop it with:
 
     Ctrl + C
 
-Optional port check:
+This avoids:
+- port conflicts on `9000`
+- datadir lock issues
+
+Optional check:
 
     ss -tulpn | grep 9000
 
-The port should not be occupied by the manual foreground process when switching to systemd mode.
-
 ---
 
-## 14. Create the Lighthouse environment file
+## 7. Create the Lighthouse environment file
 
     sudo tee /etc/lighthouse-beacon.env > /dev/null <<'EOF'
     LIGHTHOUSE_DATADIR="/var/lib/lighthouse"
@@ -356,20 +198,24 @@ Verify contents:
 Set permissions:
 
     sudo chmod 644 /etc/lighthouse-beacon.env
-
-This file is not a secret, so `644` is appropriate.
+    ls -l /etc/lighthouse-beacon.env
 
 Expected permissions:
 
     -rw-r--r-- 1 root root /etc/lighthouse-beacon.env
 
+This file is configuration only, not a secret.
+
 ---
 
-## 15. Create the Lighthouse systemd service file
+## 8. Create the Lighthouse systemd service file
 
-Important amendment:
-- `network-online.target` is preferred over `network.target`
-- `LimitNOFILE=65535` was added as good network-service hygiene
+### Important amendments
+
+The final service used:
+- `network-online.target` instead of just `network.target`
+- `LimitNOFILE=65535` for network-heavy service hygiene
+- `lighthouse bn`, which is the short form of `lighthouse beacon_node`
 
 Create the service file:
 
@@ -399,121 +245,88 @@ Create the service file:
     WantedBy=multi-user.target
     EOF
 
-Notes:
-- `bn` is the short form of `beacon_node`
-- both are valid
-
 ---
 
-## 16. Start and enable the Lighthouse service
+## 9. Reload systemd and start Lighthouse
 
     sudo systemctl daemon-reload
     sudo systemctl enable lighthouse-beacon
     sudo systemctl start lighthouse-beacon
     sudo systemctl status lighthouse-beacon --no-pager
 
-Then check logs:
+Check logs:
 
     journalctl -u lighthouse-beacon -n 50 --no-pager
 
-Healthy output should include:
+Healthy output included:
 
 - `Lighthouse started`
 - `Configured network`
 - `Data directory initialised`
 - `Hot-Cold DB initialized`
+- `Blob DB initialized`
 
 ---
 
-## 17. Verify both services are healthy
+## 10. Verify Lighthouse is healthy
 
-Check service status:
+Check status:
 
-    systemctl status nethermind --no-pager
     systemctl status lighthouse-beacon --no-pager
 
-Check live Lighthouse logs:
+Follow logs live:
 
     journalctl -u lighthouse-beacon -f
 
-Check live Nethermind logs:
+Check relevant port:
 
-    journalctl -u nethermind -f
+    ss -tulpn | grep -E '9000'
 
----
-
-## 18. Verify the ports
-
-Check ports:
-
-    ss -tulpn | grep -E '8545|8551|30303|9000'
-
-Expected healthy meaning:
-
-- `8545` = Nethermind JSON-RPC, bound to `127.0.0.1`
-- `8551` = Nethermind Engine API, bound locally
-- `30303` = Nethermind P2P port
-- `9000` = Lighthouse P2P port
-
-Desired safety posture:
-- RPC stays local
-- P2P ports are exposed for peer connectivity
+Expected:
+- UDP and TCP listeners on port `9000`
+- active service status
+- ongoing sync or block messages
 
 ---
 
-## 19. What changed after Lighthouse was connected
+## 11. Confirm Lighthouse is talking to Nethermind
 
-Before Lighthouse:
-- Nethermind showed:
-  - `Waiting for Forkchoice message from Consensus Layer`
+After Lighthouse was connected, Nethermind began receiving:
 
-After Lighthouse:
-- Nethermind began receiving:
-  - `Received ForkChoice`
-  - `Received New Block`
-  - `Syncing... Inserting block`
+- `Received ForkChoice`
+- `Received New Block`
+- `Syncing... Inserting block`
 
-This confirmed the execution and consensus layers were correctly connected.
+This confirmed that Lighthouse and Nethermind were correctly connected through the Engine API.
+
+Lighthouse also showed:
+- `Head is optimistic`
+- `Synced`
+- `New block received`
+
+This was expected while Nethermind was still syncing and had not fully verified the execution layer yet.
 
 ---
 
-## 20. Expected normal warnings during sync
+## 12. Expected normal warnings during sync
 
-These warnings are normal during initial sync and do not necessarily indicate failure:
+These are normal during early sync:
 
 ### In Lighthouse
+
 - `Head is optimistic`
 - `Downloading historical blocks`
-- occasional `Backfill sync failed`
-- backfill pausing due to insufficient synced peers
+- backfill sync pauses or retries
+- `chain not fully verified, block and attestation production disabled until execution engine syncs`
 
 Meaning:
-- Lighthouse has consensus head data
-- Nethermind is still syncing execution data
-- historical backfill continues in the background
-
-### In Nethermind
-- memory usage rising during sync
-- snap sync phase progress messages
-- fast sync / snap sync state transitions
-
-Meaning:
-- execution sync is progressing normally
+- consensus is connected
+- execution is still catching up
+- node is still healthy
 
 ---
 
-## 21. Useful daily commands
-
-### Nethermind
-
-    sudo systemctl start nethermind
-    sudo systemctl stop nethermind
-    sudo systemctl restart nethermind
-    sudo systemctl status nethermind --no-pager
-    journalctl -u nethermind -f
-    journalctl -u nethermind -n 50 --no-pager
-
-### Lighthouse
+## 13. Useful daily Lighthouse commands
 
     sudo systemctl start lighthouse-beacon
     sudo systemctl stop lighthouse-beacon
@@ -521,89 +334,51 @@ Meaning:
     sudo systemctl status lighthouse-beacon --no-pager
     journalctl -u lighthouse-beacon -f
     journalctl -u lighthouse-beacon -n 50 --no-pager
-
-### Full status
-
-    ss -tulpn | grep -E '8545|8551|30303|9000'
-    ps aux | grep nethermind
+    ss -tulpn | grep -E '9000'
     ps aux | grep lighthouse
-    df -h
-    du -sh /home/nethermind/data
     du -sh /var/lib/lighthouse
 
 ---
 
-## 22. Final architecture
+## 14. Outcome
 
-The finished setup looks like this:
+At the end of this setup, Lighthouse achieved:
 
-- **Nethermind**
-  - execution client
-  - runs under user `nethermind`
-  - systemd-managed
-  - exposes:
-    - `8545` JSON-RPC locally
-    - `8551` Engine API locally
-    - `30303` P2P
-
-- **Lighthouse**
-  - consensus client
-  - runs under user `lighthouse`
-  - systemd-managed
-  - exposes:
-    - `9000` P2P
-
-- **JWT secret**
-  - stored at `/secrets/jwt.hex`
-  - owned by `root:jwtreaders`
-  - permissions `640`
-  - readable by both service users through shared group membership
+- installed successfully from a release tarball
+- running under a dedicated `lighthouse` user
+- storing data in `/var/lib/lighthouse`
+- reading the shared JWT secret securely
+- connecting to Nethermind through the Engine API
+- completing checkpoint sync
+- receiving live beacon blocks
+- running as a `systemd` service
+- auto-starting on boot
 
 ---
 
-## 23. Outcome
+## 15. What I learned
 
-At the end of this setup, the node achieved:
-
-- Nethermind running correctly as the execution client
-- Lighthouse running correctly as the consensus client
-- both clients connected through the Engine API
-- JWT authentication working securely
-- both services managed by systemd
-- auto-start on boot enabled
-- proper Linux user separation
-- correct port exposure
-- a fully functioning post-Merge Ethereum node architecture
+- how to install Lighthouse from a release binary
+- how to connect Lighthouse to Nethermind through `8551`
+- why a shared JWT secret is required
+- how to safely share that JWT between multiple service users
+- why manual testing before automation is important
+- how to convert Lighthouse into a `systemd` service
+- how to inspect Lighthouse with `systemctl`, `journalctl`, and `ss`
+- what `Head is optimistic` means during sync
 
 ---
 
-## 24. What I learned
+## 16. Final note
 
-- how execution and consensus clients fit together after the Merge
-- why Nethermind alone waits for forkchoice
-- how to create and secure a JWT secret
-- how to share a JWT safely between two service users
-- how to use `.env` files with systemd services
-- how to test a client manually before automating it
-- how to convert a working manual process into a systemd service
-- how to inspect services with `systemctl`
-- how to inspect logs with `journalctl`
-- how to verify ports with `ss`
-- how to reason about sync state from logs
+This setup was not just a straight install. It required several real debugging amendments:
 
----
-
-## 25. Final note
-
-This setup was not just a straight-line install. It required several real-world debugging amendments:
-
-- fixing `.env` permissions
-- fixing JWT file readability
-- avoiding breaking Nethermind while making Lighthouse readable
+- using the correct versioned Lighthouse tarball
+- fixing JWT readability for Lighthouse
+- avoiding breaking Nethermind while fixing Lighthouse access
 - creating a shared group for JWT access
-- using the correct Lighthouse release tarball
-- manually testing Lighthouse before automating it
+- manually testing Lighthouse before service creation
 - stopping the foreground process before enabling the systemd service
 - improving the service unit with `network-online.target` and `LimitNOFILE`
 
-That debugging process was part of the learning and is exactly what makes this setup valuable.
+That debugging process was part of the real learning.
