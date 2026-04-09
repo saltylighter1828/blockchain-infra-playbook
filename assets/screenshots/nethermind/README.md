@@ -1,13 +1,13 @@
-## Screenshots
+# Screenshots
 
-### Service status
-![Nethermind service status](../assets/screenshots/nethermind/systemctl-status.png)
+## Service status
+![Nethermind service status](systemctl-status.png)
 
-### Recent logs
-![Nethermind recent logs](../assets/screenshots/nethermind/journalctl-logs.png)
+## Recent logs
+![Nethermind recent logs](journalctl-logs.png)
 
-### Port check
-![Nethermind ports](../assets/screenshots/nethermind/ports-check.png)
+## Port check
+![Nethermind ports](ports-check.png)
 
-### Disk and data usage
-![Nethermind disk and data usage](../assets/screenshots/nethermind/disk-and-data-usage.png)
+## Disk and data usage
+![Nethermind disk and data usage](disk-and-data-usage.png)
