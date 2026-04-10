@@ -2,6 +2,8 @@
 
 Built a simple Grafana dashboard using Prometheus as the data source to monitor the node host.
 
+![Basic Grafana dashboard](basic-grafana-dashboard.png)
+
 ### Panels
 - **Targets Up**  
   Uses the `up` metric to confirm Prometheus scrape targets are reachable.
