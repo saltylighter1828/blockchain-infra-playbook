@@ -1,5 +1,11 @@
 ## Nethermind Pruning Setup
 
+![Nethermind pruning environment settings](../assets/screenshots/nethermind/nethermind-pruning-env.png)
+
+![Nethermind pruning service status](../assets/screenshots/nethermind/nethermind-pruning-service-status.png)
+
+![Nethermind storage check](../assets/screenshots/nethermind/nethermind-storage-check.png)
+
 Configured Nethermind pruning to better manage long-term database growth on the active data drive at `/mnt/n/nethermind-data`.
 
 ### Current pruning settings
