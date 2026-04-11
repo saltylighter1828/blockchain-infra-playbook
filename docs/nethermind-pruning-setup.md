@@ -1,11 +1,5 @@
 ## Nethermind Pruning Setup
 
-![Nethermind pruning environment settings](../assets/screenshots/nethermind/nethermind-pruning-env.png)
-
-![Nethermind pruning service status](../assets/screenshots/nethermind/nethermind-pruning-service-status.png)
-
-![Nethermind storage check](../assets/screenshots/nethermind/nethermind-storage-check.png)
-
 Configured Nethermind pruning to better manage long-term database growth on the active data drive at `/mnt/n/nethermind-data`.
 
 ### Current pruning settings
@@ -31,3 +25,14 @@ Configured Nethermind pruning to better manage long-term database growth on the 
 - Bigger storage only helps if the service is actually pointed to the correct path.
 - `df -h` shows filesystem usage, while `du -sh` shows directory usage.
 - Pruning is part of long-term node maintenance, not just a last-minute emergency fix.
+
+## Screenshots
+
+### Pruning environment settings
+![Nethermind pruning environment settings](../assets/screenshots/nethermind/nethermind-pruning-env.png)
+
+### Nethermind service status after restart
+![Nethermind pruning service status](../assets/screenshots/nethermind/nethermind-pruning-service-status.png)
+
+### Storage check
+![Nethermind storage check](../assets/screenshots/nethermind/nethermind-storage-check.png)
