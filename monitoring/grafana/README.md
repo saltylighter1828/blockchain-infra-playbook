@@ -143,11 +143,11 @@ After working through storage-path issues, service checks, and general node debu
 
 ### Host Health Dashboard
 
-![Host Health Dashboard](../assets/screenshots/monitoring/grafana/grafana-host-health-dashboard.png)
+![Host Health Dashboard](../assets/screenshots/monitoring/grafana-host-health-dashboard.png)
 
 ### Storage and Network Dashboard
 
-![Storage and Network Dashboard](../assets/screenshots/monitoring/grafana/grafana-storage-network-dashboard.png)
+![Storage and Network Dashboard](../assets/screenshots/monitoring/grafana-storage-network-dashboard.png)
 
 ---
 
