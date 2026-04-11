@@ -1,5 +1,7 @@
 # Nethermind Storage Incident: Root Disk Filled by Duplicate Mainnet DB
 
+![Post-fix Nethermind and Lighthouse healthy](post-fix-nethermind-lighthouse-healthy.png)
+
 Resolved a storage incident where the Linux root filesystem `/` became critically full because a duplicate Nethermind mainnet database was stored under `/home/nethermind/data`, while the intended active database location was on `N:` at `/mnt/n/nethermind-data`. After updating the systemd service to point to the correct data directory and removing the duplicate database from root storage, both Nethermind and Lighthouse returned to a healthy syncing state.
 
 ## Environment
