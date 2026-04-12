@@ -87,7 +87,7 @@ Run once per day:
 
     ss -tulpn | grep -E '8545|8551|30303|9000|9100|9090|3000'
 
-    sudo du -sh /home/nethermind/data
+    sudo du -sh /mnt/n/nethermind-data
     sudo du -sh /var/lib/lighthouse
 
     free -h
