@@ -206,7 +206,7 @@ Contents:
     #!/usr/bin/env bash
     set -u
 
-    NETHERMIND_DATA="/home/nethermind/data"
+    NETHERMIND_DATA="/mnt/n/nethermind-data"
     LIGHTHOUSE_DATA="/var/lib/lighthouse"
 
     echo "=== DISK USAGE ==="
@@ -281,7 +281,7 @@ Contents:
     set -u
 
     PORT_PATTERN='8545|8551|30303|9000|9100|9090|3000'
-    NETHERMIND_DATA="/home/nethermind/data"
+    NETHERMIND_DATA="/mnt/n/nethermind-data"
     LIGHTHOUSE_DATA="/var/lib/lighthouse"
 
     SERVICES=(
