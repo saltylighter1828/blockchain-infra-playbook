@@ -1,26 +1,27 @@
-# 🧑‍💻 Ethereum Node Operator Checklist (Nethermind + Lighthouse + Prometheus + Grafana)
+# 🧑‍💻 Ethereum Node Operator Checklist
+## Nethermind + Lighthouse + Prometheus + Grafana
 
-This document contains a practical operational checklist for running and monitoring an Ethereum node using:
+A practical runbook for operating and monitoring an Ethereum node on Ubuntu under WSL2 using:
 
 - **Nethermind** as the execution client
 - **Lighthouse** as the consensus client
 - **systemd** for service management
-- **JWT-authenticated Engine API**
-- **Prometheus** for metrics collection
+- **JWT-secured Engine API**
 - **Node Exporter** for host metrics
+- **Prometheus** for scraping
 - **Grafana** for dashboards
 
 ---
 
-## 📍 Where This File Lives
+## 📍 File Location
 
-Create this file at:
+Save this file at:
 
     nodes/operator-checklist.md
 
 ---
 
-## 📁 Recommended Repo Structure
+## 🗂️ Repo Structure
 
     blockchain-infra-playbook/
     ├── linux/
@@ -35,24 +36,48 @@ Create this file at:
 
 ---
 
-## 🧠 What This Checklist Covers
+## 🎯 Operator Goals
 
-This checklist helps monitor:
+As an operator, I want to know four things fast:
 
-- execution + consensus client health
-- sync progress
-- ports and networking
-- logs and errors
-- storage growth
-- memory and swap pressure
-- Prometheus scrape health
-- Grafana availability
+1. **Are the services alive?**
+2. **Are execution and consensus talking to each other?**
+3. **Is sync progressing normally?**
+4. **Is the machine staying healthy?**
+
+If I can answer those four quickly, I’m operating instead of guessing.
 
 ---
 
-## 🟢 Daily Health Check (3 to 5 minutes)
+## 🧠 Current Stack Snapshot
 
-Run this once per day:
+### Core services
+- `nethermind`
+- `lighthouse-beacon`
+- `prometheus-node-exporter`
+- `prometheus`
+- `grafana-server`
+
+### Important paths
+- Nethermind data: `/home/nethermind/data`
+- Lighthouse data: `/var/lib/lighthouse`
+- JWT secret: `/secrets/jwt.hex`
+- Nethermind env: `/home/nethermind/.env`
+
+### Important ports
+- `8545` → Nethermind JSON-RPC
+- `8551` → Engine API
+- `30303` → Nethermind P2P
+- `9000` → Lighthouse P2P
+- `9100` → Node Exporter
+- `9090` → Prometheus
+- `3000` → Grafana
+
+---
+
+## 🟢 Daily Fast Check (3 to 5 minutes)
+
+Run once per day:
 
     systemctl status nethermind --no-pager
     systemctl status lighthouse-beacon --no-pager
@@ -66,31 +91,50 @@ Run this once per day:
     sudo du -sh /var/lib/lighthouse
 
     free -h
+    df -h /
 
     journalctl -u nethermind -n 20 --no-pager
     journalctl -u lighthouse-beacon -n 20 --no-pager
 
-### ✅ Verify
-
+### ✅ What “healthy enough” looks like
 - all services show `active (running)`
-- ports are open:
-  - `8545` → JSON-RPC
-  - `8551` → Engine API
-  - `30303` → execution P2P
-  - `9000` → consensus P2P
-  - `9100` → Node Exporter
-  - `9090` → Prometheus
-  - `3000` → Grafana
-- Nethermind and Lighthouse data directories continue growing during sync
-- `free -h` shows healthy available memory
-- swap usage is low or stable
-- recent logs show normal activity and no critical errors
+- expected ports are listening
+- data directories are still growing during sync
+- available memory is reasonable
+- swap is low or at least not climbing badly
+- logs show ordinary activity, not repeated failures
+- Nethermind logs show block activity / engine activity
+- Lighthouse logs show peers / sync / head movement
 
 ---
 
-## 👀 Live Monitoring (Optional)
+## 🟡 If the Node Is Still Syncing
 
-Use when debugging or watching sync or service behavior in real time:
+Use these signs to avoid false panic:
+
+### Good syncing signs
+- data directory size keeps increasing
+- logs continue updating
+- Lighthouse shows peers and head movement
+- Nethermind keeps processing blocks / syncing state
+- system is busy but not choking
+
+### Worrying signs
+- logs stop changing for a long time
+- no data growth
+- repeated auth / JWT / engine errors
+- repeated crashes or restart loops
+- machine becomes memory-starved and swap starts ballooning
+
+### Extra sync watch
+    journalctl -u nethermind -f
+    journalctl -u lighthouse-beacon -f
+
+---
+
+## 👀 Live Monitoring
+
+Use during troubleshooting or when you simply want to watch the node breathe:
 
     journalctl -u nethermind -f
     journalctl -u lighthouse-beacon -f
@@ -99,7 +143,7 @@ Use when debugging or watching sync or service behavior in real time:
 
 ---
 
-## 🟡 Every Few Days (5 to 10 minutes)
+## 🟠 Every Few Days (5 to 10 minutes)
 
     df -h
     free -h
@@ -110,89 +154,121 @@ Use when debugging or watching sync or service behavior in real time:
     ps aux | grep prometheus
     ps aux | grep grafana
 
+    curl http://127.0.0.1:9100/metrics | head
     curl http://127.0.0.1:9090/-/healthy
     curl http://127.0.0.1:3000/api/health
 
 ### ✅ Verify
-
-- enough disk space remains
-- memory available is healthy
-- swap is not climbing badly
-- Prometheus returns `Prometheus Server is Healthy.`
-- Grafana health API returns a JSON response with database `ok`
-- all core processes are still running
+- root disk still has room
+- memory looks stable
+- swap is not quietly creeping upward forever
+- Node Exporter responds
+- Prometheus returns healthy
+- Grafana returns JSON health with database `ok`
+- processes are present and not zombie-like ghosts in a trench coat
 
 ---
 
 ## 🔵 Weekly Deep Check (10 to 15 minutes)
 
+### Full service state
     systemctl status nethermind --no-pager -l
     systemctl status lighthouse-beacon --no-pager -l
     systemctl status prometheus-node-exporter --no-pager -l
     systemctl status prometheus --no-pager -l
     systemctl status grafana-server --no-pager -l
 
+### Longer logs
     journalctl -u nethermind -n 100 --no-pager
     journalctl -u lighthouse-beacon -n 100 --no-pager
     journalctl -u prometheus -n 50 --no-pager
     journalctl -u grafana-server -n 50 --no-pager
 
+### Storage + memory
     sudo du -sh /home/nethermind/data
     sudo du -sh /var/lib/lighthouse
+    df -h
+    free -h
 
+### Prometheus target checks
     curl -s http://127.0.0.1:9090/api/v1/targets | grep -E '"health"|"job"'
     curl -s "http://127.0.0.1:9090/api/v1/query?query=up"
 
-### ✅ What to Look For
+### Config snapshot checks
+    systemctl cat nethermind
+    systemctl cat lighthouse-beacon
+    sudo cat /home/nethermind/.env
+    ls -l /secrets/jwt.hex
 
-- no repeated crashes
-- no restart loops
+### ✅ What to look for
+- no repeated crash loops
 - no permission errors
-- no JWT / Engine API authentication failures
-- logs show continued syncing and block processing
-- Prometheus targets show both `prometheus` and `node` as `up`
-- `up` query returns `1` for both scrape targets
-- disk growth is consistent
-- no worrying increase in swap use
+- no JWT / Engine API auth failures
+- no broken service file edits
+- Prometheus targets show `up`
+- `up` query returns `1` for expected jobs
+- pruning settings still look correct
+- JWT file still exists and permissions still make sense
+- disk usage is growing in a way that matches expected node behaviour
 
 ---
 
-## 📊 Monitoring Stack Health Check
+## 📊 Dashboard Review Habit
 
-Use this when you want to confirm the observability stack itself is alive.
+Use Grafana as a cockpit, not wall art.
 
-### Node Exporter
+### Lighthouse dashboard
+Check these first:
+- sync status
+- head slot
+- finalized value
+- peer count
+- health panel
+- whether values are moving forward over time
 
-    systemctl status prometheus-node-exporter --no-pager
-    ss -tulpn | grep 9100
-    curl http://127.0.0.1:9100/metrics | head
+### Nethermind dashboard
+As you build it out, check:
+- process up / health
+- block progression
+- peer count
+- RPC responsiveness
+- sync state
+- system resource pressure
 
-### Prometheus
+### Operator rule
+A single frozen-looking panel is not enough to panic.
+Correlate:
+- dashboard movement
+- logs
+- service status
+- disk growth
 
-    systemctl status prometheus --no-pager
-    ss -tulpn | grep 9090
-    curl http://127.0.0.1:9090/-/healthy
-    curl -s http://127.0.0.1:9090/api/v1/targets | grep -E '"health"|"job"'
-    curl -s "http://127.0.0.1:9090/api/v1/query?query=up"
-
-### Grafana
-
-    systemctl status grafana-server --no-pager
-    ss -tulpn | grep 3000
-    curl http://127.0.0.1:3000/api/health
-
-### ✅ Verify
-
-- Node Exporter serves metrics on `9100`
-- Prometheus health endpoint responds successfully
-- Prometheus shows `node` and `prometheus` targets as healthy
-- Grafana health endpoint returns JSON with database `ok`
+Three clues beat one spooky graph.
 
 ---
 
-## 🧠 WSL2 Resource Check
+## 📦 Pruning / Storage Check
 
-Because this node runs under WSL2, memory allocation matters.
+Because you configured Nethermind pruning, review this weekly:
+
+    sudo cat /home/nethermind/.env | grep PRUNING
+
+### Confirm expected values are present
+Examples:
+- `NETHERMIND_PRUNINGCONFIG_MODE=Hybrid`
+- `NETHERMIND_PRUNINGCONFIG_FULLPRUNINGTRIGGER=VolumeFreeSpace`
+- `NETHERMIND_PRUNINGCONFIG_FULLPRUNINGTHRESHOLDMB=400000`
+
+### Watch for
+- root disk getting tight
+- data growth much faster than expected
+- pruning config accidentally removed during edits
+
+---
+
+## 🧠 WSL2 Host Check
+
+This node runs under WSL2, so host resources matter.
 
 Run:
 
@@ -201,21 +277,15 @@ Run:
     hostname -I
 
 ### ✅ Verify
-
-- WSL has enough RAM available
+- RAM available is still healthy
 - swap is not being hammered
-- root disk still has plenty of free space
-- you know the current WSL IP if browser access to local services is needed
+- root disk still has comfortable free space
+- you know the current WSL IP if browser access needs it
 
 ### Notes
-
-- High swap use usually means WSL memory is too tight or the workload is heavy
-- A little swap is okay
-- Bad signs are:
-  - high swap
-  - low available RAM
-  - sluggish system
-- If needed, tune WSL with a Windows-side `.wslconfig`
+- a little swap is okay
+- high swap + low available RAM + sluggishness = danger trio
+- if needed, tune Windows-side `.wslconfig`
 
 Example:
 
@@ -226,111 +296,193 @@ Example:
 
 ---
 
-## 🔧 Debugging Commands (When Something Breaks)
+## 🔧 Incident Playbooks
 
-### Client Logs
+### 1. Service is down
+    systemctl status nethermind --no-pager -l
+    systemctl status lighthouse-beacon --no-pager -l
+    journalctl -u nethermind -n 50 --no-pager
+    journalctl -u lighthouse-beacon -n 50 --no-pager
 
-    journalctl -u nethermind -f
-    journalctl -u lighthouse-beacon -f
-
-### Monitoring Logs
-
-    journalctl -u prometheus -f
-    journalctl -u grafana-server -f
-
-### Port Check
-
-    ss -tulpn | grep -E '8545|8551|30303|9000|9100|9090|3000'
-
-### JWT Readability Check
-
-    sudo -u nethermind test -r /secrets/jwt.hex && echo nethermind_ok || echo nethermind_fail
-    sudo -u lighthouse test -r /secrets/jwt.hex && echo lighthouse_ok || echo lighthouse_fail
-
-### Prometheus API Check
-
-    curl http://127.0.0.1:9090/-/healthy
-    curl -s http://127.0.0.1:9090/api/v1/targets | grep -E '"health"|"job"'
-    curl -s "http://127.0.0.1:9090/api/v1/query?query=up"
-
-### Grafana API Check
-
-    curl http://127.0.0.1:3000/api/health
-
-### Get WSL IP
-
-    hostname -I
+Check:
+- bad config edit
+- missing file
+- permission issue
+- crash loop
+- resource exhaustion
 
 ---
 
-## 🔁 Restart Services (if Required)
+### 2. JWT / Engine API issue
+    sudo -u nethermind test -r /secrets/jwt.hex && echo nethermind_ok || echo nethermind_fail
+    sudo -u lighthouse test -r /secrets/jwt.hex && echo lighthouse_ok || echo lighthouse_fail
+    ls -l /secrets/jwt.hex
+    ss -tulpn | grep 8551
+    journalctl -u nethermind -n 50 --no-pager
+    journalctl -u lighthouse-beacon -n 50 --no-pager
 
+Check:
+- JWT file exists
+- both service users can read it
+- Engine API port `8551` is listening
+- Lighthouse is pointing to the right execution endpoint
+- auth failures are not appearing in logs
+
+---
+
+### 3. Prometheus says target is down
+    curl http://127.0.0.1:9090/-/healthy
+    curl -s http://127.0.0.1:9090/api/v1/targets
+    systemctl status prometheus --no-pager -l
+    systemctl status prometheus-node-exporter --no-pager -l
+
+Check:
+- Prometheus service alive
+- Node Exporter alive
+- scrape targets are still correct
+- no config typo in Prometheus
+
+---
+
+### 4. Grafana not loading
+    systemctl status grafana-server --no-pager -l
+    journalctl -u grafana-server -n 50 --no-pager
+    ss -tulpn | grep 3000
+    curl http://127.0.0.1:3000/api/health
+
+Check:
+- Grafana service alive
+- port `3000` listening
+- health endpoint returns JSON
+- if using browser from Windows, test WSL IP too
+
+---
+
+### 5. Sync looks stalled
+    journalctl -u nethermind -f
+    journalctl -u lighthouse-beacon -f
+    sudo du -sh /home/nethermind/data
+    sudo du -sh /var/lib/lighthouse
+    free -h
+
+Check:
+- are logs still moving?
+- are data dirs still growing?
+- is memory exhausted?
+- are services still running even if progress is slow?
+- is it actually stalled, or just in a slower sync phase?
+
+---
+
+## 🔁 Restart Rules
+
+Only restart after checking logs first.
+
+### Safe restart commands
     sudo systemctl restart nethermind
     sudo systemctl restart lighthouse-beacon
     sudo systemctl restart prometheus-node-exporter
     sudo systemctl restart prometheus
     sudo systemctl restart grafana-server
 
+### Good operator habit
+Before restart:
+1. check status
+2. check recent logs
+3. identify likely reason
+4. restart once
+5. re-check logs immediately
+
+Do not turn “restart it” into a religion.
+
 ---
 
-## 🧠 Healthy Node Indicators
+## ⏹️ Planned Shutdown / Maintenance
 
-- Nethermind and Lighthouse both consistently show `active (running)`
-- Lighthouse logs show peers, synced state, and new blocks
-- Nethermind logs show block processing and forkchoice updates
-- execution and consensus clients continue talking to each other
-- ports remain open and stable
-- disk usage grows during sync
-- Prometheus is scraping successfully
-- Grafana is reachable and healthy
-- available memory is healthy and swap remains under control
+If intentionally shutting the machine down:
+
+### Optional clean stop
+    sudo systemctl stop lighthouse-beacon
+    sudo systemctl stop nethermind
+    sudo systemctl stop prometheus
+    sudo systemctl stop grafana-server
+    sudo systemctl stop prometheus-node-exporter
+
+Then shut down WSL / PC normally.
+
+### Startup check after boot
+    systemctl status nethermind --no-pager
+    systemctl status lighthouse-beacon --no-pager
+    systemctl status prometheus --no-pager
+    systemctl status grafana-server --no-pager
+    ss -tulpn | grep -E '8551|9000|9090|3000'
+
+---
+
+## 🧾 Evidence / Documentation Habit
+
+When something meaningful changes, capture evidence for your repo:
+
+### Good screenshot targets
+- `systemctl status nethermind`
+- `systemctl status lighthouse-beacon`
+- Lighthouse syncing logs
+- Nethermind block / forkchoice logs
+- `up` query returning `1`
+- Prometheus targets healthy
+- Grafana dashboard showing real data
+- pruning config in `.env`
+- JWT readability checks passing
+
+### Good markdown notes
+Record:
+- what changed
+- why you changed it
+- commands used
+- errors seen
+- final working state
+- lessons learned
+
+That turns random debugging into portfolio gold.
+
+---
+
+## ✅ Healthy Node Indicators
+
+A healthy node usually looks like this:
+
+- Nethermind is running
+- Lighthouse is running
+- execution and consensus are communicating
+- expected ports are listening
+- logs are alive and not screaming
+- data grows while syncing
+- Prometheus scrapes successfully
+- Grafana is reachable
+- memory is okay
+- swap is controlled
+- disk is not sneaking toward disaster
 
 ---
 
 ## ⚠️ Warning Signs
 
-Investigate if you see:
+Investigate quickly if you see:
 
 - `failed` service status
 - repeated restarts
 - `permission denied`
-- JWT / Engine API authentication failures
-- ports not listening
-- disk usage stops growing unexpectedly
+- JWT / Engine API auth failures
+- missing port listeners
+- no data growth during expected sync activity
 - Prometheus target health not `up`
 - Grafana health endpoint failing
-- excessive memory use combined with rising swap
-- system feels slow or logs stall
+- memory pressure with rising swap
+- machine feels slow and logs go quiet
 
 ---
 
-## 📌 Notes
-
-- This node runs on Ubuntu under WSL2
-- `systemd` manages startup and restart behavior
-- JWT secret is required for execution ↔ consensus communication
-- WSL memory tuning can significantly improve node stability
-- Windows browser access to Prometheus or Grafana may require the WSL IP instead of `localhost`
-- Grafana local default login is:
-  - username: `admin`
-  - password: `admin`
-
----
-
-## 🚀 Goal
-
-Build operational confidence managing blockchain infrastructure by learning how to:
-
-- monitor node health
-- understand logs
-- watch memory and disk behavior
-- validate observability tooling
-- debug failures quickly
-- develop production-style operating habits
-
----
-
-## 🔥 Quick Copy-Paste Daily Block
+## 🔥 Daily Copy-Paste Block
 
     systemctl status nethermind --no-pager
     systemctl status lighthouse-beacon --no-pager
@@ -341,12 +493,13 @@ Build operational confidence managing blockchain infrastructure by learning how 
     sudo du -sh /home/nethermind/data
     sudo du -sh /var/lib/lighthouse
     free -h
+    df -h /
     journalctl -u nethermind -n 20 --no-pager
     journalctl -u lighthouse-beacon -n 20 --no-pager
 
 ---
 
-## 🔥 Quick Copy-Paste Weekly Block
+## 🔥 Weekly Copy-Paste Block
 
     systemctl status nethermind --no-pager -l
     systemctl status lighthouse-beacon --no-pager -l
@@ -361,24 +514,22 @@ Build operational confidence managing blockchain infrastructure by learning how 
     sudo du -sh /var/lib/lighthouse
     df -h
     free -h
+    sudo cat /home/nethermind/.env | grep PRUNING
+    ls -l /secrets/jwt.hex
     curl -s http://127.0.0.1:9090/api/v1/targets | grep -E '"health"|"job"'
     curl -s "http://127.0.0.1:9090/api/v1/query?query=up"
     curl http://127.0.0.1:3000/api/health
 
 ---
 
-## ✅ Summary
+## 🚀 End Goal
 
-This file belongs at:
+Build real operator confidence by learning how to:
 
-    nodes/operator-checklist.md
-
-And it documents the real day-to-day workflow for operating and monitoring a full Ethereum node with:
-
-- Nethermind
-- Lighthouse
-- systemd
-- JWT-secured Engine API
-- Node Exporter
-- Prometheus
-- Grafana
+- monitor node health
+- read logs without fear
+- validate execution ↔ consensus communication
+- watch disk, memory, and swap like an adult
+- use dashboards as confirmation, not decoration
+- debug methodically
+- document work like a professional infra engineer
