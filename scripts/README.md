@@ -1,615 +1,370 @@
-# 🧑‍💻 Ethereum Node Operator Toolkit
-## Nethermind + Lighthouse + Prometheus + Grafana
+# 🚀 Blockchain Infra Playbook
 
-A practical GitHub README-style runbook and script pack for operating and monitoring an Ethereum node on Ubuntu under WSL2 using:
+A hands-on playbook documenting my journey into blockchain infrastructure engineering through real Linux operations, Ethereum node operation, monitoring, debugging, and observability.
 
-- **Nethermind** as the execution client
-- **Lighthouse** as the consensus client
-- **systemd** for service management
-- **JWT-secured Engine API**
-- **Prometheus** for metrics scraping
-- **Node Exporter** for host metrics
-- **Grafana** for dashboards and observability
+This repository is built as a practical field manual, not just notes, capturing real system behaviour, failures, fixes, and operational workflows while running a live Ethereum node stack on Ubuntu via WSL2.
 
 ---
 
-## 🎯 Goal
+## 🧠 What This Repo Is
 
-This toolkit is designed to help build real operator habits by making it easier to:
+This repo is a living record of real infrastructure work.
 
-- check whether services are alive
-- confirm execution and consensus are communicating
-- inspect logs quickly
-- watch disk and memory health
-- validate Prometheus and Grafana health
-- restart services cleanly and verify recovery
-- document a real node operator workflow in a portfolio
+It focuses on learning by doing:
+
+- running and maintaining real services
+- validating system health through logs, ports, and metrics
+- understanding how execution and consensus clients interact
+- debugging real issues across system, network, and protocol layers
+- building repeatable operational workflows
+- documenting everything as a reusable operator playbook
+
+The goal is to move from:
+
+> **“following tutorials” → “operating systems confidently”**
 
 ---
 
-## 📁 Recommended Repo Structure
+## 🔍 Focus Areas
+
+- 🐧 **Linux fundamentals**  
+  Processes, permissions, filesystem, memory, disk, and system inspection
+
+- ⚙️ **systemd**  
+  Service lifecycle, startup behaviour, restart logic, logs, and configuration
+
+- 🌐 **Networking**  
+  TCP/UDP, ports, localhost vs exposed interfaces, RPC, Engine API, P2P
+
+- ⛓️ **Blockchain infrastructure**  
+  Execution + consensus clients, Engine API, JWT auth, syncing, node architecture
+
+- 📊 **Monitoring & Observability**  
+  Prometheus, Node Exporter, Grafana, metrics endpoints, health checks, dashboard design
+
+- 🔧 **Debugging workflows**  
+  Logs, process inspection, port validation, resource analysis, failure diagnosis
+
+- 📚 **Operational documentation**  
+  Turning real system behaviour into structured, reusable playbooks
+
+---
+
+## 🧰 Current Stack
+
+- Windows 11 Pro
+- Ubuntu on WSL2
+- Linux CLI / Bash
+- systemd
+
+### Blockchain Clients
+- Nethermind (execution client)
+- Lighthouse (consensus client)
+
+### Monitoring Stack
+- Prometheus
+- Node Exporter
+- Grafana
+
+### CLI Tools
+- curl, ss, lsof, htop
+- journalctl, systemctl
+- jq, df, du, free
+
+---
+
+## 🔥 What I’ve Built
+
+This playbook documents a fully working Ethereum node stack with host-level and client-level monitoring.
+
+### Core Node
+
+- Nethermind running as a systemd service
+- Lighthouse running as a systemd service
+- JWT-secured Engine API communication on port `8551`
+- execution ↔ consensus interaction verified via logs and forkchoice updates
+
+### Monitoring Stack
+
+- Node Exporter exposing system metrics on port `9100`
+- Nethermind metrics exposed on port `6060`
+- Lighthouse metrics exposed and scraped by Prometheus
+- Prometheus scraping all targets on port `9090`
+- Grafana dashboards visualising host, network, storage, Lighthouse, and Nethermind health on port `3000`
+
+### Validation & Observability
+
+- Prometheus API queries (`/api/v1/query`, `/targets`)
+- `up` metric verification across services
+- direct metric inspection via `curl`
+- port-level validation using `ss`
+- system health verification via memory, disk, CPU, load, and process checks
+- execution- and consensus-client visibility through Grafana panels
+
+### Storage + Performance
+
+- Nethermind data stored on external NVMe mount:
+
+        /mnt/n/nethermind-data
+
+- pruning configured in hybrid mode with a volume-based trigger
+- Lighthouse data stored at:
+
+        /var/lib/lighthouse
+
+- WSL2 tuned with custom memory / CPU allocation
+- disk usage and disk I/O now monitored through Grafana
+
+---
+
+## 📂 Repository Structure
 
     blockchain-infra-playbook/
-    ├── linux/
-    ├── networking/
-    ├── systemd/
-    ├── monitoring/
-    │   └── prometheus-grafana-setup.md
-    ├── nodes/
-    │   └── operator-checklist.md
-    ├── scripts/
-    │   ├── health-check.sh
-    │   ├── service-status.sh
-    │   ├── disk-memory-check.sh
-    │   ├── quick-log-summary.sh
-    │   ├── restart-verify.sh
-    │   └── daily-operator-check.sh
-    ├── assets/
+    ├── linux/        → commands, processes, system inspection
+    ├── networking/   → ports, RPC, TCP/UDP, connectivity
+    ├── systemd/      → service setup, configs, logs
+    ├── monitoring/   → Prometheus, Grafana setup and dashboards
+    ├── nodes/        → node ops, architecture, operator checklist
+    ├── assets/       → screenshots / proof of system state
     └── README.md
 
 ---
 
-## 🧠 What This Covers
+## ⚙️ Real Operator Capabilities Demonstrated
 
-This operator toolkit helps monitor:
+This repository demonstrates the ability to:
 
-- execution client health
-- consensus client health
-- monitoring stack health
-- sync activity
-- recent logs
-- ports and networking
-- memory and swap pressure
-- disk growth and available space
+- run and manage multi-service infrastructure using systemd
+- validate system state using logs, ports, and metrics
+- debug service interaction issues between execution and consensus clients
+- inspect memory, disk, CPU, network, and process behaviour
+- verify monitoring pipelines end-to-end
+- query Prometheus directly via API
+- understand and secure internal service communication with JWT auth
+- operate and monitor a live blockchain node across host, consensus, and execution layers
+
+---
+
+## 📊 Monitoring Coverage
+
+The Grafana dashboard now covers multiple operational layers.
+
+### Host Health
+- CPU usage
+- memory usage
+- load average
+- system uptime
 - Prometheus scrape health
-- Grafana API health
+- Node Exporter scrape health
+
+### Network
+- network receive throughput
+- network transmit throughput
+
+### Storage
+- root disk used %
+- root free space
+- root disk used % over time
+- root free space over time
+- disk read throughput
+- disk write throughput
+
+### Lighthouse
+- Lighthouse up
+- synced status
+- peer count
+- current epoch
+- finalized epoch
+- head slot
+- slot lag
+- sync slots/sec
+- head slot rate
+
+### Nethermind
+- Nethermind up
+- sync status
+- peers
+- sync peers
+- block lag
+- blocks observed (5m)
+- chain height
+- best known block
+- block processing time
+
+This turns the stack from “services installed” into a real operator-facing monitoring view.
 
 ---
 
-## ⚙️ Core Services
+## 📡 Live System Signals
 
-### Main node services
-- `nethermind`
-- `lighthouse-beacon`
+This system is actively validated across multiple layers.
 
-### Monitoring services
-- `prometheus-node-exporter`
-- `prometheus`
-- `grafana-server`
+### Service Layer
 
----
+    systemctl status nethermind --no-pager
+    systemctl status lighthouse-beacon --no-pager
 
-## 📍 Important Paths
-
-- Nethermind data directory: `/home/nethermind/data`
-- Lighthouse data directory: `/var/lib/lighthouse`
-- JWT secret: `/secrets/jwt.hex`
-- Nethermind environment file: `/home/nethermind/.env`
+Confirms services are active and running.
 
 ---
 
-## 🌐 Important Ports
+### Network Layer
 
-- `8545` → Nethermind JSON-RPC
-- `8551` → Engine API
-- `30303` → Nethermind P2P
-- `9000` → Lighthouse P2P
+    ss -tulpn | grep -E '8551|6060|9100|9090|3000'
+
+Confirms expected ports:
+
+- `8551` → Engine API (localhost only)
+- `6060` → Nethermind metrics
 - `9100` → Node Exporter
 - `9090` → Prometheus
 - `3000` → Grafana
 
 ---
 
-## 🚀 Operator Workflow
+### Metrics Layer
 
-### Daily
-- check service health
-- confirm key ports are listening
-- review recent Nethermind and Lighthouse logs
-- confirm memory and disk are healthy
-- confirm Prometheus and Grafana are reachable
+Check Prometheus targets:
 
-### Every few days
-- inspect data directory growth
-- review scrape health
-- confirm system still has comfortable resources
+    curl -s http://127.0.0.1:9090/api/v1/targets | grep -E '"health"|"job"'
 
-### Weekly
-- inspect longer logs
-- review pruning config
-- check JWT file state
-- validate dashboards and metrics are still meaningful
+Run health query:
 
----
-
-## 🛠️ Setup
-
-Create the `scripts/` directory:
-
-    mkdir -p scripts
-
-Make all scripts executable:
-
-    chmod +x scripts/service-status.sh
-    chmod +x scripts/disk-memory-check.sh
-    chmod +x scripts/quick-log-summary.sh
-    chmod +x scripts/health-check.sh
-    chmod +x scripts/restart-verify.sh
-    chmod +x scripts/daily-operator-check.sh
-
-Run from repo root or from inside `scripts/`.
-
----
-
-## ▶️ Script Usage
-
-### Common commands
-
-    ./scripts/service-status.sh
-    ./scripts/disk-memory-check.sh
-    ./scripts/quick-log-summary.sh
-    ./scripts/quick-log-summary.sh 50
-    ./scripts/health-check.sh
-    ./scripts/restart-verify.sh
-    ./scripts/daily-operator-check.sh
-
-### Most useful daily workflow
-
-    ./scripts/daily-operator-check.sh
-
-### Faster debugging workflow
-
-    ./scripts/quick-log-summary.sh 50
-
-### Controlled restart workflow
-
-    ./scripts/restart-verify.sh
-
----
-
-# 📜 Script Pack
-
-## `scripts/service-status.sh`
-
-Purpose:
-- show current `systemd` status for all core services
-
-Contents:
-
-    #!/usr/bin/env bash
-    set -u
-
-    SERVICES=(
-      nethermind
-      lighthouse-beacon
-      prometheus-node-exporter
-      prometheus
-      grafana-server
-    )
-
-    echo "=== SERVICE STATUS ==="
-    for service in "${SERVICES[@]}"; do
-      echo
-      echo "--- $service ---"
-      systemctl status "$service" --no-pager
-    done
-
----
-
-## `scripts/disk-memory-check.sh`
-
-Purpose:
-- inspect root disk, memory, and node data directory sizes
-
-Contents:
-
-    #!/usr/bin/env bash
-    set -u
-
-    NETHERMIND_DATA="/mnt/n/nethermind-data"
-    LIGHTHOUSE_DATA="/var/lib/lighthouse"
-
-    echo "=== DISK USAGE ==="
-    df -h
-    echo
-    echo "=== ROOT DISK ==="
-    df -h /
-
-    echo
-    echo "=== DATA DIRECTORY SIZES ==="
-    sudo du -sh "$NETHERMIND_DATA" 2>/dev/null || echo "Could not read $NETHERMIND_DATA"
-    sudo du -sh "$LIGHTHOUSE_DATA" 2>/dev/null || echo "Could not read $LIGHTHOUSE_DATA"
-
-    echo
-    echo "=== MEMORY ==="
-    free -h
-
----
-
-## `scripts/quick-log-summary.sh`
-
-Purpose:
-- show a short recent log summary for the main services
-- accepts an optional line count argument
-- default is `20`
-
-Contents:
-
-    #!/usr/bin/env bash
-    set -u
-
-    LINES="${1:-20}"
-
-    SERVICES=(
-      nethermind
-      lighthouse-beacon
-      prometheus
-      grafana-server
-    )
-
-    echo "=== QUICK LOG SUMMARY (last $LINES lines) ==="
-
-    for service in "${SERVICES[@]}"; do
-      echo
-      echo "--- $service ---"
-      journalctl -u "$service" -n "$LINES" --no-pager
-    done
-
-Usage examples:
-
-    ./scripts/quick-log-summary.sh
-    ./scripts/quick-log-summary.sh 50
-
----
-
-## `scripts/health-check.sh`
-
-Purpose:
-- run a consolidated node health check covering:
-  - service states
-  - expected ports
-  - data directory sizes
-  - memory
-  - root disk
-  - Prometheus health
-  - Grafana health
-  - recent Nethermind and Lighthouse logs
-
-Contents:
-
-    #!/usr/bin/env bash
-    set -u
-
-    PORT_PATTERN='8545|8551|30303|9000|9100|9090|3000'
-    NETHERMIND_DATA="/mnt/n/nethermind-data"
-    LIGHTHOUSE_DATA="/var/lib/lighthouse"
-
-    SERVICES=(
-      nethermind
-      lighthouse-beacon
-      prometheus-node-exporter
-      prometheus
-      grafana-server
-    )
-
-    echo "========================================"
-    echo "ETHEREUM NODE HEALTH CHECK"
-    echo "========================================"
-
-    echo
-    echo "=== 1. SERVICE STATES ==="
-    for service in "${SERVICES[@]}"; do
-      if systemctl is-active --quiet "$service"; then
-        echo "[OK]    $service is active"
-      else
-        echo "[FAIL]  $service is NOT active"
-      fi
-    done
-
-    echo
-    echo "=== 2. PORT CHECK ==="
-    ss -tulpn | grep -E "$PORT_PATTERN" || echo "[WARN] Expected ports not found"
-
-    echo
-    echo "=== 3. DATA DIRECTORY SIZES ==="
-    sudo du -sh "$NETHERMIND_DATA" 2>/dev/null || echo "[WARN] Could not read $NETHERMIND_DATA"
-    sudo du -sh "$LIGHTHOUSE_DATA" 2>/dev/null || echo "[WARN] Could not read $LIGHTHOUSE_DATA"
-
-    echo
-    echo "=== 4. MEMORY ==="
-    free -h
-
-    echo
-    echo "=== 5. ROOT DISK ==="
-    df -h /
-
-    echo
-    echo "=== 6. PROMETHEUS HEALTH ==="
-    curl -fsS http://127.0.0.1:9090/-/healthy && echo || echo "[FAIL] Prometheus health check failed"
-
-    echo
-    echo "=== 7. GRAFANA HEALTH ==="
-    curl -fsS http://127.0.0.1:3000/api/health && echo || echo "[FAIL] Grafana health check failed"
-
-    echo
-    echo "=== 8. PROMETHEUS UP QUERY ==="
-    curl -fsS "http://127.0.0.1:9090/api/v1/query?query=up" || echo "[FAIL] Could not query Prometheus"
-
-    echo
-    echo "=== 9. RECENT NETHERMIND LOGS ==="
-    journalctl -u nethermind -n 10 --no-pager
-
-    echo
-    echo "=== 10. RECENT LIGHTHOUSE LOGS ==="
-    journalctl -u lighthouse-beacon -n 10 --no-pager
-
----
-
-## `scripts/restart-verify.sh`
-
-Purpose:
-- restart services one by one
-- immediately verify whether each service returned to `active`
-- print recent logs if a restart fails
-
-Contents:
-
-    #!/usr/bin/env bash
-    set -u
-
-    SERVICES=(
-      nethermind
-      lighthouse-beacon
-      prometheus-node-exporter
-      prometheus
-      grafana-server
-    )
-
-    echo "=== RESTART AND VERIFY ==="
-
-    for service in "${SERVICES[@]}"; do
-      echo
-      echo "--- Restarting $service ---"
-      sudo systemctl restart "$service"
-
-      if systemctl is-active --quiet "$service"; then
-        echo "[OK]    $service restarted successfully"
-      else
-        echo "[FAIL]  $service failed to restart"
-        echo "Recent logs for $service:"
-        journalctl -u "$service" -n 20 --no-pager
-      fi
-    done
-
----
-
-## `scripts/daily-operator-check.sh`
-
-Purpose:
-- run the main daily operator routine in one command
-- combines service status, disk/memory checks, quick logs, and health checks
-
-Contents:
-
-    #!/usr/bin/env bash
-    set -u
-
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-    echo "========================================"
-    echo "DAILY OPERATOR CHECK"
-    echo "========================================"
-    echo
-
-    bash "$SCRIPT_DIR/service-status.sh"
-    echo
-    bash "$SCRIPT_DIR/disk-memory-check.sh"
-    echo
-    bash "$SCRIPT_DIR/quick-log-summary.sh" 20
-    echo
-    bash "$SCRIPT_DIR/health-check.sh"
-
----
-
-# ✅ Healthy Node Indicators
-
-A healthy stack usually looks like this:
-
-- Nethermind and Lighthouse both show `active (running)`
-- expected ports are listening
-- Lighthouse logs show peers, sync activity, or head movement
-- Nethermind logs show block processing, sync activity, or engine communication
-- Prometheus health endpoint responds successfully
-- Grafana health endpoint returns JSON with database `ok`
-- available memory is healthy
-- swap is low or stable
-- data directories continue growing during sync
-- dashboards reflect movement rather than frozen values
-
----
-
-# ⚠️ Warning Signs
-
-Investigate when you see:
-
-- `failed` service states
-- repeated restart loops
-- `permission denied`
-- missing or unreadable JWT secret
-- Engine API authentication failures
-- expected ports not listening
-- Prometheus targets not `up`
-- Grafana API health failing
-- memory pressure with rising swap
-- logs stalling unexpectedly
-- data growth stopping during expected sync phases
-
----
-
-# 🔍 Good Debugging Commands
-
-## Service and status
-
-    systemctl status nethermind --no-pager -l
-    systemctl status lighthouse-beacon --no-pager -l
-    systemctl status prometheus --no-pager -l
-    systemctl status grafana-server --no-pager -l
-
-## Recent logs
-
-    journalctl -u nethermind -n 50 --no-pager
-    journalctl -u lighthouse-beacon -n 50 --no-pager
-    journalctl -u prometheus -n 50 --no-pager
-    journalctl -u grafana-server -n 50 --no-pager
-
-## Live logs
-
-    journalctl -u nethermind -f
-    journalctl -u lighthouse-beacon -f
-    journalctl -u prometheus -f
-    journalctl -u grafana-server -f
-
-## Ports
-
-    ss -tulpn | grep -E '8545|8551|30303|9000|9100|9090|3000'
-
-## Prometheus API
-
-    curl http://127.0.0.1:9090/-/healthy
-    curl -s http://127.0.0.1:9090/api/v1/targets
     curl -s "http://127.0.0.1:9090/api/v1/query?query=up"
 
-## Grafana API
+Expected result:
 
-    curl http://127.0.0.1:3000/api/health
-
-## JWT readability
-
-    sudo -u nethermind test -r /secrets/jwt.hex && echo nethermind_ok || echo nethermind_fail
-    sudo -u lighthouse test -r /secrets/jwt.hex && echo lighthouse_ok || echo lighthouse_fail
-    ls -l /secrets/jwt.hex
-
-## System resources
-
-    df -h
-    df -h /
-    free -h
-    hostname -I
+- all configured services return `"up": 1`
 
 ---
 
-# 🧪 Suggested Operator Routine
+### Data Layer
 
-## Daily
-Run:
-
-    ./scripts/daily-operator-check.sh
-
-Look for:
-- service health
-- listening ports
-- recent log activity
-- memory and disk sanity
-- Prometheus/Grafana responding
-
-## When something feels wrong
-Run:
-
-    ./scripts/quick-log-summary.sh 50
-    ./scripts/health-check.sh
-
-## After config edits or maintenance
-Run:
-
-    ./scripts/restart-verify.sh
+- continuous block progression in both execution and consensus views
+- active peer connectivity in Lighthouse and Nethermind
+- low or zero block lag during healthy operation
+- visible disk and network activity during node operation
+- block processing visibility through Nethermind metrics
 
 ---
 
-# 📊 Dashboard Review Habit
+## 📸 Evidence
 
-Once Grafana is working, use it like an operator:
+This repository includes proof-of-life evidence such as:
 
-## Host dashboard
-Check:
-- CPU
-- RAM
-- disk
-- network activity
+- systemctl service status screenshots
+- Lighthouse syncing logs
+- Nethermind block and forkchoice logs
+- Prometheus target health
+- Grafana host-health dashboards
+- Grafana Lighthouse monitoring dashboards
+- Grafana Nethermind monitoring dashboards
+- network, storage, and disk I/O screenshots
+- open ports and system metrics
+- disk growth and active execution / consensus progress
 
-## Lighthouse dashboard
-Check:
-- head slot
-- finalized value
-- peer count
-- sync movement
-- health panel
+### Screenshot Examples
 
-## Nethermind dashboard
-Check:
-- process health
-- sync or block progression
-- peer count
-- node responsiveness
-- resource pressure
+- `assets/screenshots/monitoring/Nethermind-and-lighthouse-dashboard-overview.png`
+- `assets/screenshots/monitoring/Nethermind-dashboard-overview.png`
+- `assets/screenshots/monitoring/lighthouse-dashboard-overview.png`
+- `assets/screenshots/monitoring/grafana-host-health-dashboard.png.png`
+- `assets/screenshots/monitoring/grafana-network-dashboard.png`
+- `assets/screenshots/monitoring/grafana-storage-dashboard.png`
 
-Operator rule:
-- never trust one panel by itself
-- correlate dashboards with logs, service status, and disk growth
+This demonstrates that the system is not just configured, it is actively running, monitored, and documented.
 
 ---
 
-# 🧠 WSL2 Notes
+## 🧪 Key Things Learned So Far
 
-Because this node runs under WSL2:
+- `up = 1` means Prometheus can successfully scrape that target
+- execution and consensus monitoring expose different health signals and both matter
+- Lighthouse sync is better measured through real sync metrics than visual guessing
+- Nethermind metrics often require `sum()` or `max()` to turn raw series into clean panels
+- block lag is a simple and useful execution-client signal:
 
-- RAM allocation matters
-- swap pressure matters
-- Windows-side resource limits can affect node stability
-- browser access to services may sometimes require the WSL IP instead of `localhost`
+        best known block - local chain height
 
-Useful commands:
-
-    free -h
-    df -h
-    hostname -I
-
-Example `.wslconfig`:
-
-    [wsl2]
-    memory=24GB
-    processors=8
-    swap=8GB
+- lower block processing time is better because it reflects faster block handling
+- disk I/O matters because node performance can be limited by storage behaviour even when CPU looks fine
+- grouping dashboards by host, network, storage, consensus, and execution makes troubleshooting much faster
+- WSL-mounted filesystems behave differently from native Linux filesystems, so reliable monitoring should focus on the native Linux root filesystem where appropriate
 
 ---
 
-# 🧾 Portfolio Value
+## 🔄 What I’m Working On
 
-This toolkit demonstrates practical experience with:
-
-- Linux fundamentals
-- `systemd`
-- log inspection
-- service operations
-- node monitoring
-- Ethereum execution and consensus architecture
-- JWT-authenticated client communication
-- Prometheus and Grafana health validation
-- operator-style debugging and documentation
+- strengthening monitoring and alert-style thinking
+- improving debugging speed and confidence
+- expanding observability through logs + metrics correlation
+- learning automation and scripting for operations
+- refining operator workflows and documentation
+- practicing service recovery and validation workflows
+- preparing for real-world infra / SRE environments
 
 ---
 
-# 🚀 Summary
+## 🎯 Goal
 
-This script pack and runbook help turn a working Ethereum node into a repeatable operator workflow.
+To become a high-level infrastructure engineer capable of:
 
-It gives a practical way to:
+- operating blockchain nodes reliably
+- debugging distributed systems
+- understanding execution + consensus deeply
+- building observable, production-style systems
+- documenting infrastructure clearly and professionally
 
-- monitor the full stack
-- debug quickly
-- build daily operational habits
-- document a real infra portfolio project
-- show evidence of understanding rather than just screenshots
+---
 
-If added to a GitHub repository, this can serve as both:
-- a personal operating guide
-- a portfolio artifact for blockchain infra or node operator roles
+## 📈 Current Progress Snapshot
+
+- WSL2 environment tuned for node workloads
+- Nethermind + Lighthouse fully operational
+- Engine API secured via JWT
+- Prometheus + Grafana fully deployed
+- Node Exporter scraping verified
+- Nethermind metrics scraping verified
+- Lighthouse metrics scraping verified
+- Grafana dashboards built for host, network, storage, Lighthouse, and Nethermind
+- API-level monitoring checks implemented
+- operator checklist built for daily and weekly workflows
+- real debugging experience across logs, ports, JWT permissions, scraping, and service interaction
+
+---
+
+## 🧭 Journey Timeline
+
+- Started infrastructure journey: April 9, 2026
+- First full Ethereum node + monitoring stack operational: April 12, 2026
+- Expanded monitoring to include host, Lighthouse, Nethermind, storage, and disk I/O dashboards: April 14, 2026
+
+---
+
+## 🧭 Philosophy
+
+This repository is intentionally practical.
+
+It documents:
+
+- what I ran
+- what broke
+- how I diagnosed it
+- how I fixed it
+- what I learned
+
+The focus is not just knowledge, but:
+
+> **building real operational confidence through hands-on systems**
+
+---
+
+## 🚀 End State
+
+To think and operate like an infrastructure engineer:
+
+- observe before acting
+- verify before assuming
+- debug methodically
+- document clearly
+- build systems that are understandable and reliable
