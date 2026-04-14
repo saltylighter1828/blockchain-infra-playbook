@@ -339,7 +339,7 @@ Instead of checking one command at a time, the dashboard now provides a more ope
 
 ### Host Health Dashboard
 
-![Host Health Dashboard](../../assets/screenshots/monitoring/grafana-host-health-dashboard.png.png)
+![Host Health Dashboard](../../assets/screenshots/monitoring/grafana-host-health-dashboard.png)
 
 ### Network Dashboard
 
