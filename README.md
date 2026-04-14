@@ -244,6 +244,13 @@ To become a high-level infrastructure engineer capable of:
 
 ---
 
+## 🧭 Journey Timeline
+
+- Started infrastructure journey: April 9, 2026
+- First full Ethereum node + monitoring stack operational: April 12, 2026
+
+---
+
 ## 🧭 Philosophy
 
 This repository is intentionally practical.
