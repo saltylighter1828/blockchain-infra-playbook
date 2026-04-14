@@ -1,8 +1,8 @@
 # Grafana Monitoring Dashboard
 
-Built a Grafana dashboard using Prometheus and node_exporter to monitor the Ethereum node host on WSL2. What started as a basic dashboard has now been expanded into a more structured host-monitoring view with separate sections for host health, storage, and network activity.
+Built a Grafana dashboard using Prometheus and node_exporter to monitor the Ethereum node host on WSL2. What started as a basic dashboard has now been expanded into a more structured monitoring view with separate sections for host health, storage, network activity, and Lighthouse consensus-client health.
 
-The goal was to move beyond simple “is it running?” checks and build a dashboard that helps spot system behaviour, resource pressure, and storage trends before they become incidents.
+The goal was to move beyond simple “is it running?” checks and build a dashboard that helps spot system behaviour, resource pressure, storage trends, and Ethereum client sync issues before they become incidents.
 
 ---
 
@@ -59,6 +59,37 @@ Tracks host traffic activity:
 - **Network Transmit**  
   Shows outbound throughput over time.
 
+### Lighthouse
+
+Tracks consensus-client health and sync behaviour:
+
+- **Lighthouse Up**  
+  Confirms the Lighthouse beacon node metrics target is being scraped successfully.
+
+- **Synced Status**  
+  Shows whether Lighthouse reports itself as synced.
+
+- **Lighthouse Peers**  
+  Shows the current peer count for the beacon node.
+
+- **Head Slot**  
+  Shows the latest beacon-chain head slot known to Lighthouse.
+
+- **Finalized Epoch**  
+  Shows the most recently finalized epoch.
+
+- **Current Epoch**  
+  Shows the present epoch according to the beacon-chain slot clock.
+
+- **Slot Lag**  
+  Shows the difference between the present slot and Lighthouse’s head slot, helping confirm whether the node is keeping up.
+
+- **Sync Slots/sec**  
+  Shows how quickly Lighthouse is moving through slots during sync activity.
+
+- **Head Slot Rate**  
+  Shows the rate of head-slot progression over time.
+
 ---
 
 ## Key Queries Used
@@ -105,6 +136,42 @@ Tracks host traffic activity:
 
     rate(node_network_transmit_bytes_total{device!="lo"}[5m])
 
+### Lighthouse up
+
+    up{job="lighthouse"}
+
+### Lighthouse synced status
+
+    sync_eth2_synced{job="lighthouse"}
+
+### Lighthouse peers
+
+    libp2p_peers{job="lighthouse"}
+
+### Lighthouse head slot
+
+    beacon_head_slot{job="lighthouse"}
+
+### Lighthouse finalized epoch
+
+    beacon_finalized_epoch{job="lighthouse"}
+
+### Lighthouse current epoch
+
+    slotclock_present_epoch{job="lighthouse"}
+
+### Lighthouse slot lag
+
+    slotclock_present_slot{job="lighthouse"} - beacon_head_slot{job="lighthouse"}
+
+### Lighthouse sync slots/sec
+
+    sync_slots_per_second{job="lighthouse"}
+
+### Lighthouse head slot rate
+
+    rate(beacon_head_slot{job="lighthouse"}[5m])
+
 ---
 
 ## What I Learned
@@ -116,6 +183,12 @@ Tracks host traffic activity:
 - Tracking both current storage values and storage trends over time makes it easier to spot unhealthy growth patterns early.
 - `node_filesystem_avail_bytes` is helpful for free-space visibility, while used percentage is often easier to read quickly during troubleshooting.
 - WSL-mounted Windows drives exposed through `9p` and `drvfs` do not behave as cleanly in node_exporter as native Linux filesystems like `ext4`, so the dashboard was kept focused on the root Linux filesystem for reliable storage monitoring.
+- Lighthouse metrics are not always named with a `lighthouse_` prefix, so discovering the real metric names through Prometheus was an important part of building the dashboard.
+- `sync_eth2_synced` is a better “am I synced?” signal than trying to infer sync from visual progress alone.
+- `slotclock_present_slot - beacon_head_slot` is a simple and useful way to monitor whether Lighthouse is keeping up with the chain head.
+- A small slot lag of `0` to `1` is normal during steady-state operation and does not necessarily indicate a problem.
+- `rate(beacon_head_slot[5m])` provides a useful heartbeat-style signal to confirm the beacon chain head is still progressing.
+- `sync_slots_per_second` behaves more like a sync-speed indicator than a general health indicator, so it is most useful during catch-up or recovery.
 
 ---
 
@@ -128,6 +201,12 @@ Tracks host traffic activity:
 - Root disk usage is low overall, with free space around the 940 GiB range.
 - The storage graphs show a repeating sawtooth pattern, which suggests normal write activity followed by periodic cleanup or space recovery.
 - Network receive and transmit panels confirm the host is actively sending and receiving traffic.
+- Lighthouse is up and being scraped successfully through Prometheus.
+- Lighthouse reports itself as synced.
+- Peer count is healthy and confirms active beacon-network connectivity.
+- Head slot, current epoch, and finalized epoch are all progressing as expected.
+- Slot lag remains very low, indicating Lighthouse is keeping up with the current chain state.
+- Head slot rate is consistent with normal beacon-chain slot progression.
 
 ---
 
@@ -135,7 +214,7 @@ Tracks host traffic activity:
 
 This dashboard is the foundation for moving from reactive troubleshooting to proactive monitoring.
 
-After working through storage-path issues, service checks, and general node debugging, building this Grafana view helped turn those lessons into something operationally useful. It gives a fast visual check of host health and makes it easier to notice patterns in disk growth, system load, and network activity.
+After working through storage-path issues, service checks, JWT permission issues, metrics exposure, Prometheus scraping, and general node debugging, building this Grafana view helped turn those lessons into something operationally useful. It gives a fast visual check of host health and makes it easier to notice patterns in disk growth, system load, network activity, and consensus-client sync behaviour.
 
 ---
 
@@ -149,18 +228,24 @@ After working through storage-path issues, service checks, and general node debu
 
 ![Storage and Network Dashboard](../../assets/screenshots/monitoring/grafana-storage-network-dashboard.png)
 
+### Lighthouse Dashboard Overview
+
+![Lighthouse Dashboard Overview](../../assets/screenshots/monitoring/lighthouse-dashboard-overview.png)
+
 ---
 
 ## Next Step
 
-The next upgrade is to extend this from **host monitoring** into **Ethereum client monitoring** by exposing and scraping:
+The next upgrade is to extend this from host monitoring plus Lighthouse consensus-client monitoring into a fuller Ethereum node dashboard by adding:
 
 - **Nethermind metrics**
-- **Lighthouse metrics**
+- **Execution-client peer and sync panels**
+- **Combined client-health views across execution and consensus**
 
 That will allow future dashboard panels for:
 
-- Peer count
-- Sync status
-- Head progress
-- Client-specific health
+- Nethermind peer count
+- Nethermind sync status
+- Execution head progress
+- Cross-client health correlation
+- Full Ethereum node operational visibility
