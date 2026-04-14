@@ -1,8 +1,8 @@
 # 🚀 Blockchain Infra Playbook
 
-A hands-on playbook documenting my journey into blockchain infrastructure engineering through real Linux operations, Ethereum node setup, service management, networking, debugging, and observability.
+A hands-on playbook documenting my journey into blockchain infrastructure engineering through real Linux operations, Ethereum node operation, monitoring, debugging, and observability.
 
-This repository is built as a practical field manual, not just a study notebook. It captures the commands I use, the systems I run, the issues I hit, the fixes I make, and the lessons I learn while building real blockchain infrastructure on Ubuntu WSL2.
+This repository is built as a practical field manual — not just notes — capturing real system behaviour, failures, fixes, and operational workflows while running a live Ethereum node stack on Ubuntu (WSL2).
 
 ---
 
@@ -11,219 +11,263 @@ This repository is built as a practical field manual, not just a study notebook.
 This repo is a living record of real infrastructure work.
 
 It focuses on learning by doing:
-- installing and operating services
-- reading logs and validating system state
-- understanding how blockchain node components fit together
-- documenting real troubleshooting and operational workflows
-- building the habits of an infrastructure engineer through repetition and evidence
 
-The goal is not just to collect notes, but to build a reusable operator playbook.
+- running and maintaining real services
+- validating system health through logs, ports, and metrics
+- understanding how execution and consensus clients interact
+- debugging real issues across system, network, and protocol layers
+- building repeatable operational workflows
+- documenting everything as a reusable operator playbook
+
+The goal is to move from:
+
+> **“following tutorials” → “operating systems confidently”**
 
 ---
 
 ## 🔍 Focus Areas
 
 - 🐧 **Linux fundamentals**  
-  Commands, processes, permissions, filesystem awareness, and service users
+  Processes, permissions, filesystem, memory, disk, and system inspection
 
 - ⚙️ **systemd**  
-  Unit files, service startup, boot behavior, restart handling, and log inspection
+  Service lifecycle, startup behaviour, restart logic, logs, and configuration
 
 - 🌐 **Networking**  
-  TCP/UDP, ports, localhost vs public interfaces, peer-to-peer networking, and RPC concepts
+  TCP/UDP, ports, localhost vs exposed interfaces, RPC, Engine API, P2P
 
-- ⛓️ **Blockchain nodes**  
-  Execution clients, consensus clients, Engine API, JWT authentication, syncing, and node architecture
+- ⛓️ **Blockchain infrastructure**  
+  Execution + consensus clients, Engine API, JWT auth, syncing, node architecture
 
-- 🔧 **Debugging and monitoring**  
-  Logs, process checks, port verification, disk growth, health checks, and sync-state reasoning
+- 📊 **Monitoring & Observability**  
+  Prometheus, Node Exporter, Grafana, metrics endpoints, health checks
+
+- 🔧 **Debugging workflows**  
+  Logs, process inspection, port validation, resource analysis, failure diagnosis
 
 - 📚 **Operational documentation**  
-  Turning hands-on setup, debugging, and maintenance into clear written playbooks
+  Turning real system behaviour into structured, reusable playbooks
 
 ---
 
 ## 🧰 Current Stack
 
-- Windows 11 Pro
-- Ubuntu on WSL2
-- Linux CLI / Bash
-- `systemd`
+- Windows 11 Pro  
+- Ubuntu on WSL2  
+- Linux CLI / Bash  
+- systemd  
+
+### Blockchain Clients
 - Nethermind (execution client)
 - Lighthouse (consensus client)
-- CLI tools: `curl`, `wget`, `ss`, `lsof`, `htop`, `jq`, `journalctl`, `systemctl`
+
+### Monitoring Stack
+- Prometheus
+- Node Exporter
+- Grafana
+
+### CLI Tools
+- curl, ss, lsof, htop
+- journalctl, systemctl
+- jq, df, du, free
 
 ---
 
 ## 🔥 What I’ve Built
 
-So far, this playbook documents a working local Ethereum node stack with:
+This playbook documents a fully working Ethereum node stack.
 
-- Nethermind running as a `systemd` service
-- Lighthouse running as a `systemd` service
-- JWT-authenticated Engine API communication between execution and consensus clients
-- active sync monitoring through logs, ports, and storage growth
-- screenshot evidence showing live service health and execution-consensus interaction
-- written notes covering installation, debugging, verification, and daily operator workflows
+### Core Node
+
+- Nethermind running as a systemd service
+- Lighthouse running as a systemd service
+- JWT-secured Engine API communication (port 8551)
+- Execution ↔ consensus interaction verified via logs and forkchoice updates
+
+### Monitoring Stack
+
+- Node Exporter exposing system metrics (port 9100)
+- Nethermind metrics exposed (port 6060)
+- Prometheus scraping all targets (port 9090)
+- Grafana dashboards visualising node + system health (port 3000)
+
+### Validation & Observability
+
+- Prometheus API queries (/api/v1/query, /targets)
+- `up` metric verification across all services
+- direct metric inspection via curl
+- port-level validation using ss
+- system health verification via memory, disk, and process checks
+
+### Storage + Performance
+
+- Nethermind data stored on external NVMe mount:
+
+        /mnt/n/nethermind-data
+
+- pruning configured (hybrid mode, volume-based trigger)
+- Lighthouse data stored at:
+
+        /var/lib/lighthouse
+
+- WSL2 tuned with custom memory/CPU allocation
 
 ---
 
 ## 📂 Repository Structure
 
-    linux/      → Linux commands, foundations, process/resource checks
-    networking/ → Ports, TCP/UDP, RPC, connectivity notes
-    systemd/    → Service setup, management, logs, configs, and client install notes
-    nodes/      → Node architecture, operator workflows, and execution vs consensus notes
-    assets/     → Screenshots and supporting evidence
-    README.md   → Root overview of the playbook
+    blockchain-infra-playbook/
+    ├── linux/        → commands, processes, system inspection
+    ├── networking/   → ports, RPC, TCP/UDP, connectivity
+    ├── systemd/      → service setup, configs, logs
+    ├── monitoring/   → Prometheus, Grafana setup
+    ├── nodes/        → node ops, architecture, operator checklist
+    ├── assets/       → screenshots / proof of system state
+    └── README.md
 
 ---
 
-## 🛠️ Node Operations
+## ⚙️ Real Operator Capabilities Demonstrated
 
-### Nethermind
+This repository demonstrates the ability to:
 
-- [Nethermind Install and Service Setup](systemd/nethermind-install-and-service-setup.md)
-- [Nethermind Operator Checks](systemd/nethermind-operator-checks.md)
-- [Nethermind Screenshot Evidence](assets/screenshots/nethermind/README.md)
-
-These documents cover:
-- installing Nethermind on Ubuntu WSL2
-- configuring Nethermind as a `systemd` service
-- checking logs, ports, disk usage, and process health
-- documenting proof-of-life screenshots from the live environment
-
----
-
-### Consensus Client Notes
-
-- [Consensus Client Notes](systemd/consensus-client-notes.md)
-
-This document covers:
-- what a consensus client is
-- why Nethermind alone waits for forkchoice
-- what port `8551` is used for
-- why Lighthouse is the chosen consensus client for this setup
+- run and manage multi-service infrastructure using systemd
+- validate system state using logs, ports, and metrics
+- debug service interaction issues (execution ↔ consensus)
+- inspect memory, disk, and process behaviour
+- verify monitoring pipelines end-to-end
+- query Prometheus directly via API
+- understand and secure internal service communication (JWT)
+- operate and monitor a live syncing blockchain node
 
 ---
 
-### Lighthouse
+## 📊 Live System Signals
 
-- [Lighthouse Install and Setup](systemd/lighthouse-install-and-setup.md)
+This system is actively validated across multiple layers.
 
-This document covers:
-- downloading and installing Lighthouse
-- sharing JWT access securely between service users
-- connecting Lighthouse to Nethermind through the Engine API
-- manually testing Lighthouse before automation
-- running Lighthouse as a `systemd` service
-- verifying execution and consensus client communication
+### Service Layer
+
+    systemctl status nethermind --no-pager
+    systemctl status lighthouse-beacon --no-pager
+
+Confirms services are active and running.
 
 ---
 
-### Full Ethereum Node Evidence
+### Network Layer
 
-- [Nethermind + Lighthouse Screenshot Evidence](assets/screenshots/eth-node-nethermind-lighthouse/README.md)
+    ss -tulpn | grep -E '8551|6060|9100|9090|3000'
 
-This folder contains screenshot evidence for:
-- Nethermind and Lighthouse service status
+Confirms expected ports:
+
+- 8551 → Engine API (localhost only)
+- 6060 → Nethermind metrics
+- 9100 → Node Exporter
+- 9090 → Prometheus
+- 3000 → Grafana
+
+---
+
+### Metrics Layer
+
+Check Prometheus targets:
+
+    curl -s http://127.0.0.1:9090/api/v1/targets | grep -E '"health"|"job"'
+
+Run health query:
+
+    curl -s "http://127.0.0.1:9090/api/v1/query?query=up"
+
+Expected result:
+- all services return `"up": 1`
+
+---
+
+### Data Layer
+
+- continuous disk growth during sync
+- active block processing in Nethermind logs
+- Lighthouse peer count and head progression
+
+---
+
+## 📸 Evidence
+
+This repository includes proof-of-life evidence:
+
+- systemctl service status screenshots
 - Lighthouse syncing logs
-- Nethermind receiving forkchoice updates
-- open ports
-- disk and chain-data growth
+- Nethermind block + forkchoice logs
+- Prometheus targets health
+- Grafana dashboards
+- open ports and system metrics
+- disk growth during sync
 
----
-
-## 📸 Live Node Status
-
-This repository includes proof-of-life evidence from a live Ethereum node environment, including:
-
-- execution client running under `systemd`
-- consensus client running under `systemd`
-- successful forkchoice updates from Lighthouse to Nethermind
-- active listening ports for execution, Engine API, and consensus networking
-- storage growth from live chain sync
-
-This evidence is included not just to show that the setup exists, but to demonstrate that it is functioning and being actively operated.
+This demonstrates that the system is not just configured — it is actively running and monitored.
 
 ---
 
 ## 🔄 What I’m Working On
 
-Right now, I’m focused on:
-
-- operating and documenting a full Ethereum node stack
-- strengthening Linux and `systemd` fundamentals through real use
-- understanding execution vs consensus responsibilities more deeply
-- improving node health checks, log reading, and sync-state interpretation
-- turning hands-on setup and debugging into reusable documentation
-- building a portfolio of practical blockchain infrastructure work
+- strengthening monitoring and alert-style thinking
+- improving system debugging speed and confidence
+- expanding observability (metrics + logs correlation)
+- learning automation and scripting for operations
+- refining operator workflows and documentation
+- preparing for real-world infra / SRE environments
 
 ---
 
 ## 🎯 Goal
 
-To become a high-level blockchain infrastructure engineer capable of:
+To become a high-level infrastructure engineer capable of:
 
-- running and maintaining blockchain nodes reliably
-- debugging distributed systems and service interactions
-- understanding execution and consensus client architecture deeply
-- building observable, dependable, real-world infrastructure
-- documenting systems clearly enough for other operators to learn from and trust
-
----
-
-## 📌 Philosophy of This Repo
-
-This repository is intentionally practical.
-
-It is not just a collection of theoretical notes. It is a running log of:
-- what I installed
-- how I configured it
-- how I verified it
-- what issues I ran into
-- how I fixed them
-- what I learned from the process
-- how I would explain it to someone coming after me
-
-The aim is to move from “following setup steps” to “thinking and operating like an infrastructure engineer.”
+- operating blockchain nodes reliably
+- debugging distributed systems
+- understanding execution + consensus deeply
+- building observable, production-style systems
+- documenting infrastructure clearly and professionally
 
 ---
 
 ## 📈 Current Progress Snapshot
 
-This playbook currently includes:
-
-- Ubuntu WSL2 environment setup
-- Nethermind installed and managed as a `systemd` service
-- service inspection with `systemctl`
-- log inspection with `journalctl`
-- process, port, and disk checks
-- WSL distro migration to a larger NVMe-backed location
-- consensus-client architecture notes
-- Lighthouse setup documentation
-- full execution + consensus node evidence
-- screenshot evidence for both execution-only and full-node stages
-- operator checklists for daily and weekly node monitoring
+- WSL2 environment tuned (CPU, memory, disk)
+- Nethermind + Lighthouse fully operational
+- Engine API secured via JWT
+- monitoring stack fully deployed (Prometheus + Grafana)
+- metrics scraping verified across all services
+- API-level monitoring checks implemented
+- operator checklist built for daily/weekly workflows
+- real debugging experience across logs, ports, and services
 
 ---
 
-## 🧭 Why This Repo Exists
+## 🧭 Philosophy
 
-I’m using this repository to build real operational confidence.
+This repository is intentionally practical.
 
-That means learning how to:
-- inspect systems instead of guessing
-- verify services instead of assuming
-- understand logs instead of ignoring them
-- document infrastructure in a way that is both technically useful and repeatable
+It documents:
 
-Over time, this playbook is meant to grow into a solid record of practical blockchain infrastructure capability.
+- what I ran
+- what broke
+- how I diagnosed it
+- how I fixed it
+- what I learned
+
+The focus is not just knowledge, but:
+
+> **building real operational confidence through hands-on systems**
 
 ---
 
-## 📌 Notes
+## 🚀 End State
 
-This repo is continuously updated as I learn by building and operating real systems.
+To think and operate like an infrastructure engineer:
 
-Each file is meant to be a practical artifact from hands-on work, with enough clarity that I can revisit it later and understand not just what I did, but why I did it.
+- observe before acting
+- verify before assuming
+- debug methodically
+- document clearly
+- build systems that are understandable and reliable
