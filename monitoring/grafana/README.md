@@ -1,16 +1,34 @@
 # Grafana Monitoring Dashboard
 
-Built a Grafana dashboard using Prometheus and node_exporter to monitor an Ethereum node stack running on WSL2. What started as a basic system-health view has now grown into a more complete operator dashboard with separate sections for host health, storage, network activity, Lighthouse consensus-client monitoring, and Nethermind execution-client monitoring.
+This dashboard was built to monitor a live Ethereum node stack running on Ubuntu under WSL2 using Prometheus, Node Exporter, Grafana, Nethermind, and Lighthouse.
 
-The goal was to move beyond simple “is it running?” checks and build something that helps spot system behaviour, resource pressure, storage trends, disk activity, and Ethereum client sync issues before they become incidents.
+What began as a simple host-health dashboard has developed into a broader operator-facing monitoring view covering host health, storage, network activity, Lighthouse consensus monitoring, and Nethermind execution monitoring. The focus is not only on confirming that services are running, but on making system behaviour visible early enough to detect pressure, lag, or unhealthy patterns before they turn into incidents. :contentReference[oaicite:0]{index=0}
 
 ---
 
-## Current Dashboard Sections
+## Purpose
+
+The goal of this dashboard is to move from basic service checks toward practical, layered observability for Ethereum infrastructure.
+
+It is designed to answer questions such as:
+
+- Is the host healthy enough to support the node?
+- Are Prometheus targets being scraped successfully?
+- Is Lighthouse synced and keeping up?
+- Is Nethermind tracking the chain head cleanly?
+- Is storage, disk I/O, or network behaviour showing early warning signs?
+
+In that sense, the dashboard acts as an operational view of the full stack rather than a collection of unrelated charts. :contentReference[oaicite:1]{index=1}
+
+---
+
+## Current Dashboard Coverage
 
 ### Host Health
 
-Tracks core machine health and scrape availability:
+Tracks baseline machine condition and scrape availability.
+
+Panels include:
 
 - **Memory Usage %**  
   Shows RAM usage over time.
@@ -22,22 +40,22 @@ Tracks core machine health and scrape availability:
   Shows how full the root filesystem is.
 
 - **Load Average**  
-  Displays Linux load averages over 1 minute, 5 minutes, and 15 minutes to show short-term and long-term system pressure.
+  Displays Linux load averages over 1 minute, 5 minutes, and 15 minutes to show short-term and sustained system pressure.
 
 - **System Uptime**  
   Shows how long the host has been running since the last reboot.
 
 - **Prometheus Up**  
-  Confirms Prometheus is being scraped successfully.
+  Confirms the Prometheus target is being scraped successfully.
 
 - **Node Exporter Up**  
-  Confirms node_exporter is being scraped successfully.
-
----
+  Confirms the Node Exporter target is being scraped successfully.
 
 ### Network
 
-Tracks host traffic activity:
+Tracks host traffic activity.
+
+Panels include:
 
 - **Network Receive**  
   Shows inbound throughput over time.
@@ -45,17 +63,17 @@ Tracks host traffic activity:
 - **Network Transmit**  
   Shows outbound throughput over time.
 
----
-
 ### Storage
 
-Tracks both current storage state and storage behaviour over time:
+Tracks both current storage state and storage behaviour over time.
+
+Panels include:
 
 - **Root Disk Used % Over Time**  
-  Shows root filesystem growth as a percentage.
+  Shows filesystem growth as a percentage.
 
 - **Root Free Space Over Time**  
-  Shows available free space on the root filesystem over time.
+  Shows available free space over time.
 
 - **Disk Read**  
   Shows disk read throughput over time for the active block device.
@@ -69,20 +87,20 @@ Tracks both current storage state and storage behaviour over time:
 - **Root Free Space**  
   Quick stat for current available root free space.
 
----
-
 ### Lighthouse
 
-Tracks consensus-client health and sync behaviour:
+Tracks consensus-client health and sync behaviour.
+
+Panels include:
 
 - **Lighthouse Up**  
-  Confirms the Lighthouse beacon node metrics target is being scraped successfully.
+  Confirms the Lighthouse metrics target is being scraped successfully.
 
 - **Synced Status**  
   Shows whether Lighthouse reports itself as synced.
 
 - **Lighthouse Peers**  
-  Shows the current peer count for the beacon node.
+  Shows current beacon-node peer count.
 
 - **Head Slot**  
   Shows the latest beacon-chain head slot known to Lighthouse.
@@ -97,22 +115,22 @@ Tracks consensus-client health and sync behaviour:
   Shows the difference between the present slot and Lighthouse’s head slot, helping confirm whether the node is keeping up.
 
 - **Sync Slots/sec**  
-  Shows how quickly Lighthouse is moving through slots during sync activity.
+  Shows Lighthouse sync speed during catch-up activity.
 
 - **Head Slot Rate**  
   Shows the rate of head-slot progression over time.
 
----
-
 ### Nethermind
 
-Tracks execution-client health, sync state, peer activity, execution progress, and processing behaviour:
+Tracks execution-client health, sync state, peer activity, execution progress, and processing behaviour.
+
+Panels include:
 
 - **Nethermind Up**  
   Confirms the Nethermind metrics target is being scraped successfully.
 
 - **Sync Status**  
-  Shows whether Nethermind reports itself as still syncing or fully synced.
+  Shows whether Nethermind reports itself as syncing or fully synced.
 
 - **Peers**  
   Shows the current connected peer count.
@@ -124,16 +142,16 @@ Tracks execution-client health, sync state, peer activity, execution progress, a
   Shows the difference between the best known block and the local chain height.
 
 - **Blocks Observed (5m)**  
-  Shows the approximate number of blocks observed or processed over the last 5 minutes.
+  Shows approximate block activity over the last 5 minutes.
 
 - **Chain Height**  
   Shows the current local blockchain height known to Nethermind.
 
 - **Best Known Block**  
-  Shows the best block number currently known to Nethermind from peers/network.
+  Shows the best block number currently known from peers and network state.
 
 - **Block Processing Time**  
-  Shows how long Nethermind took to process the most recent block, in milliseconds.
+  Shows how long Nethermind took to process the most recent block, in milliseconds. :contentReference[oaicite:2]{index=2}
 
 ---
 
@@ -263,63 +281,109 @@ Tracks execution-client health, sync state, peer activity, execution progress, a
 
 ---
 
-## What I Learned
+## What This Dashboard Helps Validate
 
-- `up = 1` means Prometheus can successfully scrape that target.
-- Host monitoring becomes much more useful when panels are grouped by purpose instead of mixed together.
-- CPU %, memory %, and load average each tell a different story about system pressure.
-- Load average is not the same as CPU usage. It shows how much work is running or waiting over different time windows.
-- Tracking both current storage values and storage trends over time makes it easier to spot unhealthy growth patterns early.
-- `node_filesystem_avail_bytes` is useful for free-space visibility, while used percentage is often easier to read quickly during troubleshooting.
-- WSL-mounted Windows drives exposed through `9p` and `drvfs` do not behave as cleanly in node_exporter as native Linux filesystems like `ext4`, so the dashboard was kept focused on the root Linux filesystem for reliable storage monitoring.
-- Disk I/O adds an important extra layer for node monitoring because Ethereum clients can appear healthy on CPU while still being bottlenecked by storage behaviour.
-- Lighthouse metrics are not always named with a `lighthouse_` prefix, so discovering the real metric names through Prometheus was an important part of building the dashboard.
-- `sync_eth2_synced` is a better “am I synced?” signal than trying to infer sync from visual progress alone.
-- `slotclock_present_slot - beacon_head_slot` is a simple and useful way to monitor whether Lighthouse is keeping up with the chain head.
-- A small slot lag of `0` to `1` is normal during steady-state operation and does not necessarily indicate a problem.
-- `rate(beacon_head_slot[5m])` provides a useful heartbeat-style signal to confirm the beacon chain head is still progressing.
-- `sync_slots_per_second` behaves more like a sync-speed indicator than a general health indicator, so it is most useful during catch-up or recovery.
-- Nethermind metrics often expose multiple series, so `sum()` and `max()` were useful for turning raw metrics into clean operator panels.
-- `ethereum_blockchain_height` shows the local chain height, while `ethereum_best_known_block_number` shows the best block known from peers/network.
-- `Block Lag = Best Known Block - Chain Height` is a simple execution-client health signal.
-- A block lag of `0` or very close to `0` usually means Nethermind is keeping up with the network head.
-- Lower block processing time is better because it measures how long Nethermind took to process the latest block.
-- `increase(nethermind_blocks[5m])` behaves like a useful activity/heartbeat panel for execution-layer block handling.
+This dashboard makes it easier to validate the node stack across multiple operational layers at once.
+
+### Host Layer
+- whether CPU, memory, load, and disk look stable
+- whether storage is filling unexpectedly
+- whether disk activity looks normal
+
+### Monitoring Layer
+- whether Prometheus and Node Exporter are both up
+- whether metrics are being scraped successfully
+- whether key queries remain usable
+
+### Consensus Layer
+- whether Lighthouse is up
+- whether it reports itself as synced
+- whether peer count and head-slot progression look healthy
+- whether slot lag remains low
+
+### Execution Layer
+- whether Nethermind is up
+- whether it is synced
+- whether chain height is tracking the best known block
+- whether block lag remains near zero
+- whether block processing time remains low and stable
+
+This turns the dashboard into a practical validation surface rather than a purely visual summary. :contentReference[oaicite:3]{index=3}
+
+---
+
+## Key Lessons Learned
+
+A few important operational takeaways emerged while building and refining the dashboard:
+
+- `up = 1` means Prometheus can successfully scrape a target
+- host monitoring is much easier to interpret when panels are grouped by operational purpose
+- CPU usage, memory usage, and load average each describe different forms of pressure
+- load average is not the same as CPU usage; it reflects work running or waiting over time
+- storage monitoring becomes more useful when both current values and long-term trends are visible
+- `node_filesystem_avail_bytes` is useful for raw free-space tracking, while used percentage is often faster to interpret at a glance
+- WSL-mounted Windows filesystems exposed via `9p` and `drvfs` are less reliable for clean Linux-style storage monitoring, so the dashboard focuses on the native Linux root filesystem where appropriate
+- disk I/O adds an important performance layer because a node can appear healthy on CPU while still being limited by storage behaviour
+- Lighthouse metrics are not always named with a `lighthouse_` prefix, so discovering the actual metric names through Prometheus exploration was an important part of the build
+- `sync_eth2_synced` is a much stronger sync signal than trying to infer sync visually
+- `slotclock_present_slot - beacon_head_slot` is a simple and useful consensus lag indicator
+- a small slot lag of `0` to `1` is normal during steady-state operation
+- `rate(beacon_head_slot[5m])` works well as a heartbeat-style signal for beacon-chain progression
+- `sync_slots_per_second` is most useful during catch-up and recovery rather than as a steady-state health metric
+- Nethermind metrics often expose multiple series, so `sum()` and `max()` are helpful for producing cleaner operator panels
+- `ethereum_blockchain_height` reflects local execution progress, while `ethereum_best_known_block_number` reflects the best network head known from peers
+- block lag is a simple and effective execution-client health signal
+- a lag of `0` or near `0` usually indicates Nethermind is keeping up
+- lower block processing time is generally better because it reflects faster block handling
+- `increase(nethermind_blocks[5m])` is a useful execution-layer activity signal
+
+These lessons helped shape the dashboard from a collection of metrics into a more usable operational tool. :contentReference[oaicite:4]{index=4}
 
 ---
 
 ## Current Observations
 
-- Prometheus and node_exporter are both up and being scraped successfully.
-- Memory usage is active but stable overall.
-- CPU usage shows normal activity without sustained high pressure.
-- Load average shows short bursts but no major long-duration stress.
-- Root disk usage is low overall, with free space around the 935 GiB range.
-- Storage graphs show normal write activity and gradual filesystem growth patterns.
-- Disk read and disk write panels confirm the active Linux filesystem is being used and monitored at the block-device level.
-- Network receive and transmit panels confirm the host is actively sending and receiving traffic.
-- Lighthouse is up and being scraped successfully through Prometheus.
-- Lighthouse reports itself as synced.
-- Lighthouse peer count is healthy and confirms active beacon-network connectivity.
-- Head slot, current epoch, and finalized epoch are all progressing as expected.
-- Slot lag remains very low, indicating Lighthouse is keeping up with the current chain state.
-- Head slot rate is consistent with normal beacon-chain slot progression.
-- Nethermind is up and exposing metrics successfully.
-- Nethermind peer count and sync-peer count confirm active execution-layer connectivity.
-- Chain height and best known block closely track each other, indicating Nethermind is keeping up with the chain head.
-- Block lag remains at or near zero, which is a strong sign of healthy execution progress.
-- Block processing time remains low, suggesting block import is being handled comfortably.
-- Blocks Observed (5m) provides a useful heartbeat-style signal for ongoing execution-layer activity.
+Based on the current dashboard state:
+
+- Prometheus and Node Exporter are up and scraping successfully
+- memory usage is active but stable overall
+- CPU usage shows normal activity without sustained high pressure
+- load average shows short bursts but no major long-duration stress
+- root disk usage remains low, with large free-space headroom
+- storage panels show normal write activity and gradual filesystem growth
+- disk read and write panels confirm active Linux filesystem usage at the block-device level
+- network receive and transmit panels confirm active host traffic
+- Lighthouse is up and scraped successfully
+- Lighthouse reports itself as synced
+- Lighthouse peer count reflects active beacon-network connectivity
+- head slot, current epoch, and finalized epoch are progressing as expected
+- slot lag remains very low, indicating Lighthouse is keeping up with current chain state
+- head slot rate is consistent with normal beacon-chain progression
+- Nethermind is up and exposing metrics successfully
+- Nethermind peer count and sync-peer count confirm active execution-layer connectivity
+- chain height and best known block remain closely aligned
+- block lag remains at or near zero, indicating healthy execution progress
+- block processing time remains low, suggesting block import is being handled comfortably
+- Blocks Observed (5m) acts as a useful heartbeat-style signal for ongoing execution activity
 
 ---
 
 ## Why This Matters
 
-This dashboard is the foundation for moving from reactive troubleshooting to proactive monitoring.
+This dashboard is an important step in moving from reactive troubleshooting toward proactive monitoring.
 
-After working through storage-path issues, service checks, JWT permission issues, metrics exposure, Prometheus scraping, Lighthouse setup, Nethermind setup, disk monitoring, and general node debugging, building this Grafana view helped turn those lessons into something operationally useful. It gives a fast visual check of host health and makes it easier to notice patterns in disk growth, storage activity, network traffic, consensus sync behaviour, and execution-client progress.
+After working through storage-path issues, service validation, JWT permission problems, metrics exposure, Prometheus scraping, Lighthouse monitoring, Nethermind monitoring, disk visibility, and general node debugging, building this Grafana view turned those lessons into something operationally useful.
 
-Instead of checking one command at a time, the dashboard now provides a more operator-friendly view of the full node stack.
+Instead of checking one command at a time, the dashboard now provides a faster, more operator-friendly view of the stack across:
+
+- host health
+- storage behaviour
+- disk activity
+- network traffic
+- consensus sync behaviour
+- execution-client progress
+
+That shift matters because it reduces guesswork and makes it easier to spot abnormal behaviour early. :contentReference[oaicite:5]{index=5}
 
 ---
 
@@ -353,11 +417,13 @@ Instead of checking one command at a time, the dashboard now provides a more ope
 
 ## Next Step
 
-The next upgrade path is not more raw panels, but more operational maturity around the existing dashboard. Good next steps include:
+The next upgrade path is not simply adding more raw panels, but increasing operational maturity around the existing dashboard.
+
+Good next steps include:
 
 - basic alerting for service-down, high block lag, or low disk space
-- practicing service restarts and recovery checks
-- learning what “normal” looks like for peers, lag, processing time, CPU, memory, and disk I/O
-- improving dashboard layout and README documentation as the node stack matures
+- practicing restart and recovery validation workflows against the dashboard
+- learning clearer normal ranges for peers, lag, processing time, CPU, memory, and disk I/O
+- refining panel layout and documentation as the stack matures
 
-This dashboard is now a solid v1 Ethereum node monitoring foundation across the host, consensus layer, and execution layer.
+This dashboard is now a solid v1 monitoring foundation for an Ethereum node across the host, consensus layer, and execution layer.
