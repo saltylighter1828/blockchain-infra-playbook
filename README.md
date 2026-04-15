@@ -1,153 +1,158 @@
 # 🚀 Blockchain Infra Playbook
 
-A hands-on playbook documenting my journey into blockchain infrastructure engineering through real Linux operations, Ethereum node operation, monitoring, debugging, and observability.
+A hands-on infrastructure portfolio focused on Ethereum node operations, Linux systems work, observability, and service reliability.
 
-This repository is built as a practical field manual, not just notes, capturing real system behaviour, failures, fixes, and operational workflows while running a live Ethereum node stack on Ubuntu via WSL2.
-
----
-
-## 🧠 What This Repo Is
-
-This repo is a living record of real infrastructure work.
-
-It focuses on learning by doing:
-
-- running and maintaining real services
-- validating system health through logs, ports, and metrics
-- understanding how execution and consensus clients interact
-- debugging real issues across system, network, and protocol layers
-- building repeatable operational workflows
-- documenting everything as a reusable operator playbook
-
-The goal is to move from:
-
-> **“following tutorials” → “operating systems confidently”**
+This repository documents the design, operation, monitoring, and troubleshooting of a live Ethereum node stack running on Ubuntu via WSL2, using Nethermind, Lighthouse, Prometheus, Grafana, and Node Exporter. It is built as an operator-facing playbook that captures real system behaviour, real failure modes, and the workflows used to validate and recover services.
 
 ---
 
-## 🔍 Focus Areas
+## Overview
 
-- 🐧 **Linux fundamentals**  
-  Processes, permissions, filesystem, memory, disk, and system inspection
+This project is designed around practical infrastructure work rather than theory alone.
 
-- ⚙️ **systemd**  
-  Service lifecycle, startup behaviour, restart logic, logs, and configuration
+It focuses on:
 
-- 🌐 **Networking**  
-  TCP/UDP, ports, localhost vs exposed interfaces, RPC, Engine API, P2P
+- operating real services with `systemd`
+- understanding execution and consensus client interaction
+- validating system health through logs, ports, metrics, and APIs
+- building observability across host, execution, and consensus layers
+- documenting repeatable operational workflows
+- turning manual node operations into structured runbooks and Bash tooling
 
-- ⛓️ **Blockchain infrastructure**  
-  Execution + consensus clients, Engine API, JWT auth, syncing, node architecture
-
-- 📊 **Monitoring & Observability**  
-  Prometheus, Node Exporter, Grafana, metrics endpoints, health checks, dashboard design
-
-- 🔧 **Debugging workflows**  
-  Logs, process inspection, port validation, resource analysis, failure diagnosis
-
-- 📚 **Operational documentation**  
-  Turning real system behaviour into structured, reusable playbooks
+The broader goal is to develop production-style infrastructure habits through direct hands-on operation.
 
 ---
 
-## 🧰 Current Stack
+## Technical Focus
 
+### Linux & Systems
+- process inspection
+- filesystem and storage awareness
+- memory and disk analysis
+- service lifecycle management
+- command-line operations in Ubuntu on WSL2
+
+### Service Operations
+- `systemd` unit management
+- startup and restart sequencing
+- service validation
+- live and historical log inspection
+- controlled shutdown and recovery workflows
+
+### Networking
+- localhost-bound service design
+- TCP/UDP port inspection
+- RPC and Engine API validation
+- metrics endpoint verification
+- internal service communication patterns
+
+### Blockchain Infrastructure
+- Nethermind as the execution client
+- Lighthouse as the consensus client
+- Engine API connectivity via JWT authentication
+- sync verification and peer visibility
+- execution and consensus observability
+
+### Monitoring & Observability
+- Prometheus scrape configuration and validation
+- Grafana dashboard design
+- Node Exporter host metrics
+- direct Prometheus API verification
+- metrics-based health checks for both clients
+
+### Documentation & Automation
+- operational checklists
+- recovery runbooks
+- Bash-based validation tooling
+- repeatable workflows for node inspection and control
+
+---
+
+## Current Stack
+
+### Platform
 - Windows 11 Pro
 - Ubuntu on WSL2
-- Linux CLI / Bash
-- systemd
+- Bash / Linux CLI
+- `systemd`
 
 ### Blockchain Clients
-- Nethermind (execution client)
-- Lighthouse (consensus client)
+- Nethermind
+- Lighthouse
 
 ### Monitoring Stack
 - Prometheus
 - Node Exporter
 - Grafana
 
-### CLI Tools
-- curl, ss, lsof, htop
-- journalctl, systemctl
-- jq, df, du, free
+### Common Tools
+- `curl`
+- `ss`
+- `lsof`
+- `htop`
+- `journalctl`
+- `systemctl`
+- `jq`
+- `df`
+- `du`
+- `free`
 
 ---
 
-## 🔥 What I’ve Built
+## What This Repository Demonstrates
 
-This playbook documents a fully working Ethereum node stack with host-level and client-level monitoring.
+This repository demonstrates practical capability in:
+
+- running and managing a multi-service blockchain infrastructure stack
+- operating execution and consensus clients together with correct service dependency flow
+- securing execution-consensus communication using JWT-authenticated Engine API access
+- validating services using system state, ports, logs, APIs, and metrics
+- building observability across host, consensus, and execution layers
+- debugging service interaction, scrape health, endpoint readiness, and startup timing issues
+- documenting real operational behaviour in a structured and reusable way
+
+---
+
+## Implemented Node Stack
 
 ### Core Node
+- Nethermind running as a `systemd` service
+- Lighthouse running as a `systemd` service
+- Engine API communication secured with JWT on port `8551`
+- execution ↔ consensus interaction verified through logs and forkchoice updates
 
-- Nethermind running as a systemd service
-- Lighthouse running as a systemd service
-- JWT-secured Engine API communication on port `8551`
-- execution ↔ consensus interaction verified via logs and forkchoice updates
-
-### Monitoring Stack
-
-- Node Exporter exposing system metrics on port `9100`
+### Monitoring
+- Node Exporter exposing host metrics on port `9100`
 - Nethermind metrics exposed on port `6060`
-- Lighthouse metrics exposed and scraped by Prometheus
-- Prometheus scraping all targets on port `9090`
-- Grafana dashboards visualising host, network, storage, Lighthouse, and Nethermind health on port `3000`
+- Lighthouse metrics exposed on port `5054`
+- Prometheus scraping configured targets on port `9090`
+- Grafana visualising host, network, storage, Lighthouse, and Nethermind health on port `3000`
 
-### Validation & Observability
+### Validation
+- Prometheus API verification via `/targets` and `/api/v1/query`
+- `up` metric confirmation across configured scrape jobs
+- direct metrics inspection with `curl`
+- port-level verification using `ss`
+- system resource validation through memory, disk, load, uptime, and process checks
+- sync and peer visibility through both raw logs and dashboard panels
 
-- Prometheus API queries (`/api/v1/query`, `/targets`)
-- `up` metric verification across services
-- direct metric inspection via `curl`
-- port-level validation using `ss`
-- system health verification via memory, disk, CPU, load, and process checks
-- execution- and consensus-client visibility through Grafana panels
-
-### Storage + Performance
-
-- Nethermind data stored on external NVMe mount:
+### Storage & Runtime
+- Nethermind data stored on external NVMe at:
 
         /mnt/n/nethermind-data
 
-- pruning configured in hybrid mode with a volume-based trigger
+- Nethermind pruning configured in hybrid mode with volume-based trigger
 - Lighthouse data stored at:
 
         /var/lib/lighthouse
 
-- WSL2 tuned with custom memory / CPU allocation
-- disk usage and disk I/O now monitored through Grafana
+- WSL2 configured with tuned memory / CPU allocation for node workloads
 
 ---
 
-## 📂 Repository Structure
+## Monitoring Coverage
 
-    blockchain-infra-playbook/
-    ├── linux/        → commands, processes, system inspection
-    ├── networking/   → ports, RPC, TCP/UDP, connectivity
-    ├── systemd/      → service setup, configs, logs
-    ├── monitoring/   → Prometheus, Grafana setup and dashboards
-    ├── nodes/        → node ops, architecture, operator checklist
-    ├── assets/       → screenshots / proof of system state
-    └── README.md
-
----
-
-## ⚙️ Real Operator Capabilities Demonstrated
-
-This repository demonstrates the ability to:
-
-- run and manage multi-service infrastructure using systemd
-- validate system state using logs, ports, and metrics
-- debug service interaction issues between execution and consensus clients
-- inspect memory, disk, CPU, network, and process behaviour
-- verify monitoring pipelines end-to-end
-- query Prometheus directly via API
-- understand and secure internal service communication with JWT auth
-- operate and monitor a live blockchain node across host, consensus, and execution layers
-
----
-
-## 📊 Monitoring Coverage
-
-The Grafana dashboard now covers multiple operational layers.
+Grafana dashboards currently cover multiple operational layers.
 
 ### Host Health
 - CPU usage
@@ -158,112 +163,139 @@ The Grafana dashboard now covers multiple operational layers.
 - Node Exporter scrape health
 
 ### Network
-- network receive throughput
-- network transmit throughput
+- receive throughput
+- transmit throughput
 
 ### Storage
 - root disk used %
 - root free space
-- root disk used % over time
-- root free space over time
-- disk read throughput
-- disk write throughput
+- disk usage trends
+- read throughput
+- write throughput
 
 ### Lighthouse
-- Lighthouse up
+- service availability
 - synced status
 - peer count
 - current epoch
 - finalized epoch
 - head slot
 - slot lag
-- sync slots/sec
-- head slot rate
+- sync slots per second
+- head slot growth rate
 
 ### Nethermind
-- Nethermind up
+- service availability
 - sync status
-- peers
+- peer count
 - sync peers
 - block lag
-- blocks observed (5m)
+- blocks observed
 - chain height
 - best known block
 - block processing time
 
-This turns the stack from “services installed” into a real operator-facing monitoring view.
+This turns the stack from a basic deployment into an operator-facing monitored environment.
 
 ---
 
-## 📡 Live System Signals
+## Operational Validation
 
-This system is actively validated across multiple layers.
+The system is validated across several layers.
 
 ### Service Layer
 
     systemctl status nethermind --no-pager
     systemctl status lighthouse-beacon --no-pager
 
-Confirms services are active and running.
-
----
+Used to confirm service activity and runtime state.
 
 ### Network Layer
 
     ss -tulpn | grep -E '8551|6060|9100|9090|3000'
 
-Confirms expected ports:
+Used to confirm the expected local ports are listening.
 
-- `8551` → Engine API (localhost only)
+Expected ports include:
+
+- `8551` → Engine API
 - `6060` → Nethermind metrics
 - `9100` → Node Exporter
 - `9090` → Prometheus
 - `3000` → Grafana
 
----
-
 ### Metrics Layer
 
-Check Prometheus targets:
-
     curl -s http://127.0.0.1:9090/api/v1/targets | grep -E '"health"|"job"'
-
-Run health query:
-
     curl -s "http://127.0.0.1:9090/api/v1/query?query=up"
 
-Expected result:
-
-- all configured services return `"up": 1`
-
----
+Used to confirm Prometheus target health and scrape success.
 
 ### Data Layer
-
-- continuous block progression in both execution and consensus views
-- active peer connectivity in Lighthouse and Nethermind
+- continuous execution and consensus progression
+- active peer connectivity
 - low or zero block lag during healthy operation
-- visible disk and network activity during node operation
-- block processing visibility through Nethermind metrics
+- visible disk and network activity
+- observable block processing behaviour
 
 ---
 
-## 📸 Evidence
+## Bash Tooling
 
-This repository includes proof-of-life evidence such as:
+This repository also includes an operational scripts layer for repeatable node workflows.
 
-- systemctl service status screenshots
-- Lighthouse syncing logs
+Current tooling includes:
+
+- `node-check.sh`
+- `service-validate.sh`
+- `quick-logs.sh`
+- `live-logs.sh`
+- `startup-services.sh`
+- `shutdown-services.sh`
+- `restart-services.sh`
+- `shutdown-and-exit-wsl.sh`
+- `metrics-check.sh`
+
+These scripts package common checks and recovery actions into reusable operator utilities, covering:
+
+- health snapshots
+- service validation
+- log inspection
+- startup / shutdown / restart flows
+- monitoring and metrics verification
+
+---
+
+## Repository Structure
+
+    blockchain-infra-playbook/
+    ├── linux/        → commands, processes, system inspection
+    ├── networking/   → ports, RPC, TCP/UDP, connectivity
+    ├── systemd/      → service setup, configs, logs
+    ├── monitoring/   → Prometheus, Grafana setup and dashboards
+    ├── nodes/        → node operations, architecture, operator checklists
+    ├── scripts/      → Bash tooling for validation and recovery workflows
+    ├── assets/       → screenshots and supporting evidence
+    └── README.md
+
+---
+
+## Evidence
+
+This repository includes proof-of-life evidence from the running stack, including:
+
+- `systemctl` service status output
+- Lighthouse sync logs
 - Nethermind block and forkchoice logs
 - Prometheus target health
 - Grafana host-health dashboards
-- Grafana Lighthouse monitoring dashboards
-- Grafana Nethermind monitoring dashboards
+- Grafana Lighthouse dashboards
+- Grafana Nethermind dashboards
 - network, storage, and disk I/O screenshots
-- open ports and system metrics
-- disk growth and active execution / consensus progress
+- open port validation
+- live execution and consensus progress
 
-### Screenshot Examples
+Example screenshots include:
 
 - `assets/screenshots/monitoring/Nethermind-and-lighthouse-dashboard-overview.png`
 - `assets/screenshots/monitoring/Nethermind-dashboard-overview.png`
@@ -272,99 +304,98 @@ This repository includes proof-of-life evidence such as:
 - `assets/screenshots/monitoring/grafana-network-dashboard.png`
 - `assets/screenshots/monitoring/grafana-storage-dashboard.png`
 
-This demonstrates that the system is not just configured, it is actively running, monitored, and documented.
+These artifacts are included to show that the stack is not only configured, but actively running, monitored, and verified.
 
 ---
 
-## 🧪 Key Things Learned So Far
+## Key Practical Learnings
 
-- `up = 1` means Prometheus can successfully scrape that target
-- execution and consensus monitoring expose different health signals and both matter
-- Lighthouse sync is better measured through real sync metrics than visual guessing
-- Nethermind metrics often require `sum()` or `max()` to turn raw series into clean panels
-- block lag is a simple and useful execution-client signal:
+Some of the main operational takeaways from this project so far:
+
+- `up = 1` in Prometheus confirms a successful scrape, not just a running service
+- execution and consensus clients expose different health signals and both must be observed
+- Lighthouse sync is better measured through metrics than by visual guesswork
+- Nethermind metrics often require aggregation functions such as `sum()` or `max()` for useful dashboard panels
+- block lag is a simple and effective execution-client health indicator:
 
         best known block - local chain height
 
-- lower block processing time is better because it reflects faster block handling
-- disk I/O matters because node performance can be limited by storage behaviour even when CPU looks fine
-- grouping dashboards by host, network, storage, consensus, and execution makes troubleshooting much faster
-- WSL-mounted filesystems behave differently from native Linux filesystems, so reliable monitoring should focus on the native Linux root filesystem where appropriate
+- block processing time is a useful performance signal for execution health
+- disk behaviour matters for node performance, even when CPU usage appears normal
+- grouping observability by host, network, storage, consensus, and execution speeds up troubleshooting
+- WSL-mounted filesystems behave differently from native Linux filesystems, which affects how storage should be interpreted and monitored
 
 ---
 
-## 🔄 What I’m Working On
+## Project Status
 
-- strengthening monitoring and alert-style thinking
-- improving debugging speed and confidence
-- expanding observability through logs + metrics correlation
-- learning automation and scripting for operations
-- refining operator workflows and documentation
-- practicing service recovery and validation workflows
-- preparing for real-world infra / SRE environments
-
----
-
-## 🎯 Goal
-
-To become a high-level infrastructure engineer capable of:
-
-- operating blockchain nodes reliably
-- debugging distributed systems
-- understanding execution + consensus deeply
-- building observable, production-style systems
-- documenting infrastructure clearly and professionally
-
----
-
-## 📈 Current Progress Snapshot
-
+### Completed
 - WSL2 environment tuned for node workloads
-- Nethermind + Lighthouse fully operational
-- Engine API secured via JWT
-- Prometheus + Grafana fully deployed
+- Nethermind + Lighthouse operational
+- Engine API secured with JWT
+- Prometheus + Grafana deployed
 - Node Exporter scraping verified
 - Nethermind metrics scraping verified
 - Lighthouse metrics scraping verified
-- Grafana dashboards built for host, network, storage, Lighthouse, and Nethermind
-- API-level monitoring checks implemented
-- operator checklist built for daily and weekly workflows
-- real debugging experience across logs, ports, JWT permissions, scraping, and service interaction
+- dashboards built for host, network, storage, Lighthouse, and Nethermind
+- Prometheus API-level checks implemented
+- operational Bash tooling implemented for validation and recovery
+- real debugging performed across logs, ports, JWT permissions, scrape health, and service readiness
+
+### In Progress
+- strengthening monitoring and alert-style thinking
+- improving debugging speed and confidence
+- refining infrastructure documentation
+- expanding operational automation
+- preparing for more production-style infra / SRE workflows
 
 ---
 
-## 🧭 Journey Timeline
+## Timeline
 
-- Started infrastructure journey: April 9, 2026
+- Infrastructure journey started: April 9, 2026
 - First full Ethereum node + monitoring stack operational: April 12, 2026
-- Expanded monitoring to include host, Lighthouse, Nethermind, storage, and disk I/O dashboards: April 14, 2026
+- Monitoring expanded across host, Lighthouse, Nethermind, storage, and disk I/O: April 14, 2026
 
 ---
 
-## 🧭 Philosophy
+## Career Direction
+
+This project is part of a broader move toward infrastructure engineering, with emphasis on:
+
+- blockchain node operations
+- Linux systems work
+- monitoring and observability
+- debugging distributed systems
+- service reliability
+- operator-focused automation
+
+The aim is to continue developing toward roles in blockchain infrastructure, platform engineering, SRE, or reliability-focused systems work.
+
+---
+
+## Philosophy
 
 This repository is intentionally practical.
 
-It documents:
+It records:
 
-- what I ran
-- what broke
-- how I diagnosed it
-- how I fixed it
-- what I learned
+- what was deployed
+- what failed
+- how issues were diagnosed
+- how recovery was verified
+- what was learned from operating the system directly
 
-The focus is not just knowledge, but:
-
-> **building real operational confidence through hands-on systems**
+The focus is not only on understanding commands, but on building operational confidence through repeated, observable, real-world infrastructure work.
 
 ---
 
-## 🚀 End State
+## End Goal
 
-To think and operate like an infrastructure engineer:
+To operate like an infrastructure engineer who can:
 
 - observe before acting
 - verify before assuming
 - debug methodically
 - document clearly
-- build systems that are understandable and reliable
+- build systems that are understandable, monitored, and reliable
