@@ -1,44 +1,44 @@
 # Consensus Client Notes
 
-This document records my current understanding of Ethereum consensus clients, why Nethermind alone is not enough to form a complete post-Merge node, what port `8551` is used for, and which consensus client I plan to pair with Nethermind next.
+This document captures a practical understanding of Ethereum consensus clients, why an execution client alone is not sufficient for a complete post-Merge node, what port `8551` is used for, and why Lighthouse is the consensus client paired with Nethermind in this setup.
 
 ---
 
 ## Purpose
 
-My current setup uses:
+The current environment uses:
 
 - **Nethermind** as the execution client
 - Ubuntu on WSL2
 - `systemd` for service management
 
-Nethermind is running correctly as a service, but its logs show messages such as:
+Nethermind is operating correctly as a service, but its logs include messages such as:
 
 - `Waiting for Forkchoice message from Consensus Layer`
 - `Not receiving ForkChoices from the consensus client that are required to sync`
 
-These messages indicate that the execution client is healthy, but it is still waiting for a consensus client to provide forkchoice updates.
+Those messages do not indicate that Nethermind is broken. They indicate that the execution layer is healthy, but still waiting for a consensus client to provide the forkchoice updates required for full post-Merge operation. :contentReference[oaicite:0]{index=0}
 
 ---
 
-## What is a consensus client?
+## What a Consensus Client Does
 
-A consensus client is the part of an Ethereum node that handles the **consensus layer**.
+A consensus client is responsible for the **consensus layer** of Ethereum.
 
-Its responsibilities include:
+Its role includes:
 
 - following the Beacon Chain
 - tracking slots and epochs
-- validating consensus data
+- validating consensus-layer data
 - determining the canonical chain head
 - sending forkchoice updates to the execution client
-- participating in proof-of-stake consensus networking
+- participating in proof-of-stake networking
 
-A consensus client does **not** execute transactions or smart contracts directly.
+A consensus client does **not** execute transactions or run EVM smart contract logic directly.
 
-Instead, it works together with an execution client.
+Instead, it works in partnership with an execution client to form a complete Ethereum node.
 
-Examples of Ethereum consensus clients include:
+Common consensus clients include:
 
 - Lighthouse
 - Teku
@@ -48,11 +48,11 @@ Examples of Ethereum consensus clients include:
 
 ---
 
-## What is Nethermind doing on its own?
+## What Nethermind Does on Its Own
 
 Nethermind is an **execution client**.
 
-Its responsibilities include:
+Its role includes:
 
 - processing Ethereum transactions
 - executing EVM smart contract logic
@@ -61,141 +61,164 @@ Its responsibilities include:
 - serving blockchain data to tools and applications
 - participating in execution-layer peer-to-peer networking
 
-In my current setup, Nethermind is already handling:
+In the current setup, Nethermind is already handling:
 
 - JSON-RPC on port `8545`
 - Engine API on port `8551`
 - P2P networking on port `30303`
 
-This means Nethermind is working correctly as the execution side of the node.
+That means Nethermind is functioning correctly as the execution side of the node. What is still missing is the consensus side. :contentReference[oaicite:1]{index=1}
 
 ---
 
-## Why does Nethermind wait for forkchoice?
+## Why Nethermind Waits for Forkchoice
 
-After Ethereum moved to proof of stake, the execution client no longer decides chain head and finality by itself.
+After Ethereum moved to proof of stake, the execution client no longer decides chain head and finality on its own.
 
-Instead, the consensus client tells the execution client which chain head is valid through **forkchoice updates**.
+That responsibility now sits with the consensus client, which informs the execution client which head is valid through **forkchoice updates**.
 
-That is why Nethermind logs messages like:
+That is why Nethermind logs messages such as:
 
 - `Waiting for Forkchoice message from Consensus Layer`
 - `Not receiving ForkChoices from the consensus client that are required to sync`
 
-These messages do **not** necessarily mean Nethermind is broken.
-
-They mean:
+In practice, those messages mean:
 
 - Nethermind is running
-- peer networking is active
-- the execution layer is waiting for the consensus layer
+- execution-layer networking is active
+- the execution client is waiting for consensus-layer guidance
 - a consensus client still needs to be connected
 
-So at this stage, I have an execution client running, but not yet a complete post-Merge Ethereum node.
+So at this stage, the setup represents a healthy execution client, but not yet a complete post-Merge Ethereum node.
 
 ---
 
-## What is port `8551` for?
+## What Port `8551` Is For
 
 Port `8551` is used for the **Engine API**.
 
-The Engine API is the communication bridge between:
+The Engine API is the private communication bridge between:
 
-- the **execution client** (Nethermind)
-- the **consensus client** (for me, planned: Lighthouse)
+- the **execution client** (`Nethermind`)
+- the **consensus client** (`Lighthouse` in this setup)
 
-This API allows the consensus client to:
+Through this interface, the consensus client can:
 
 - send forkchoice updates
-- request payload building
-- coordinate block execution with the execution client
+- coordinate payload building
+- request execution-related operations
+- align execution with consensus decisions
 
 In practical terms:
 
-- `8545` is mainly for JSON-RPC
-- `30303` is for peer-to-peer networking
-- `8551` is the private execution ↔ consensus connection
+- `8545` is primarily for JSON-RPC
+- `30303` is for execution-layer peer-to-peer networking
+- `8551` is the execution ↔ consensus bridge
 
-This is why `8551` matters so much in a post-Merge node.
+This is why `8551` is a critical port in any post-Merge Ethereum node.
 
 ---
 
-## Which consensus client do I want to pair with Nethermind?
+## Why a Consensus Client Is Required
 
-I plan to pair Nethermind with:
+An execution client alone is no longer enough to operate a full Ethereum node.
+
+Without a consensus client:
+
+- the execution layer can run
+- JSON-RPC can be available
+- P2P networking can be active
+- local service health can look normal
+
+But the node is still incomplete because:
+
+- chain head and finality are not being driven by the consensus layer
+- forkchoice updates are missing
+- the execution client cannot fully participate as part of a complete post-Merge stack
+
+The consensus client is therefore not an optional add-on. It is part of the full node architecture.
+
+---
+
+## Chosen Consensus Client: Lighthouse
+
+The consensus client selected for this setup is:
 
 - **Lighthouse**
 
-### Why Lighthouse?
+### Why Lighthouse
 
-My reasons:
+Reasons for choosing Lighthouse include:
 
-- it is a well-known Ethereum consensus client
-- it is popular and widely used
-- it seems beginner-friendly for learning node architecture
-- it is a good fit for a Linux/systemd learning path
-- it will help me understand how a full Ethereum node fits together
+- it is a well-established Ethereum consensus client
+- it is widely used and well documented
+- it is a good fit for Linux and `systemd`-based learning
+- it makes the execution ↔ consensus split easier to understand in practice
+- it fits naturally into an infrastructure-focused learning path
 
-I want to use Lighthouse as the next step in turning my current Nethermind setup into a more complete node stack.
+Lighthouse is the next step in turning a working Nethermind execution client into a complete Ethereum node stack.
 
 ---
 
-## Why this matters for infrastructure learning
+## Why This Matters for Infrastructure Learning
 
-Adding a consensus client is important because it teaches me:
+Adding a consensus client matters for much more than simply “installing more software”.
+
+It introduces several important infrastructure concepts:
 
 - execution vs consensus separation
-- multi-service architecture
+- multi-service node architecture
 - service-to-service communication
 - Engine API relationships
-- additional logs and troubleshooting paths
-- how a complete Ethereum node is assembled and operated
+- JWT-secured authentication between services
+- new logging, monitoring, and troubleshooting paths
+- the operational model of a complete post-Merge Ethereum node
 
-This is not just about “installing more software”.
-It is about understanding how distributed blockchain infrastructure is composed.
+This is one of the clearest examples of how blockchain infrastructure is composed from multiple cooperating services rather than a single process.
 
 ---
 
-## Current understanding
+## Current Understanding
 
-Right now, my understanding is:
+At this stage, the working understanding is:
 
 - Nethermind is the execution client
-- a consensus client is still required
+- a consensus client is still required for a complete post-Merge node
 - Nethermind waits for forkchoice because no consensus client is connected yet
-- port `8551` is the Engine API bridge between the two
-- Lighthouse is the consensus client I want to learn next
+- port `8551` is the Engine API bridge between execution and consensus
+- Lighthouse is the consensus client paired with Nethermind in this environment
 
 ---
 
-## Next step
+## Next Step
 
-My next planned step is to:
+The next operational step is to:
 
 - install Lighthouse
 - connect Lighthouse to Nethermind
-- verify that the execution and consensus clients can communicate correctly
-- observe how the logs and node behavior change once the node stack is complete
+- verify Engine API communication over `8551`
+- confirm that execution and consensus logs reflect successful coordination
+- observe how node behaviour changes once the full stack is complete
 
 ---
 
-## What I learned
+## Key Takeaways
 
-- what a consensus client is
-- why Nethermind alone is not a complete post-Merge node
-- why forkchoice messages matter
-- what port `8551` is used for
-- why Lighthouse is my chosen next client
+- a consensus client manages Ethereum’s consensus layer
+- Nethermind alone is not a complete post-Merge node
+- forkchoice messages are essential because consensus now determines the canonical head
+- port `8551` is the Engine API bridge between execution and consensus
+- Lighthouse is the chosen consensus client for completing the node stack
 
 ---
 
 ## Outcome
 
-This note gives me a clear mental model before I move on to installing Lighthouse.
+This note provides a clearer mental model of the execution-consensus split before moving into Lighthouse installation and integration.
 
-It helps me explain:
+It explains:
 
-- what is currently working
+- what is already working
 - what is still missing
-- what the next step is
-- why adding a consensus client is necessary
+- why the missing component matters
+- how the full Ethereum node architecture fits together
