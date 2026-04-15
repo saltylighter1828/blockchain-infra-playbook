@@ -1,155 +1,156 @@
 # Scripts
 
-This folder contains small Bash scripts to make Ethereum node operations more repeatable, faster, and less error-prone.
+This directory contains the Bash tooling used to support day-to-day Ethereum node operations across the local Nethermind, Lighthouse, Prometheus, and Grafana stack.
 
-The goal is not to build complex software. The goal is to turn common operator tasks into simple, reusable workflows.
+The purpose of these scripts is to make routine operational tasks more consistent, faster to execute, and easier to verify. Rather than relying on scattered one-off commands, this layer packages common checks and service actions into small, reusable utilities.
 
-These scripts are meant to help with:
+These scripts are intended to support practical node operations such as:
 
-- daily node checks
+- health and status checks
 - service validation
-- quick log inspection
-- restart and recovery workflows
-- metrics and health verification
+- log inspection
+- startup, shutdown, and restart workflows
+- monitoring and metrics verification
 
-They are part of the broader idea of moving from:
-
-> manual commands → repeatable operator tools
+Together, they form a lightweight operator toolkit built around the stack running in this repository.
 
 ---
 
-## Why This Exists
+## Overview
 
-When operating a node stack, it is easy to keep retyping the same commands:
+Operating a node stack quickly leads to repeated use of the same core system commands:
 
-- `systemctl status`
+- `systemctl`
 - `journalctl`
-- `ss -tulpn`
+- `ss`
 - `curl`
-- `df -h`
-- `free -h`
+- `df`
+- `free`
+- JSON-RPC queries
+- Prometheus API queries
 
-That works at first, but scripting those checks makes operations:
+Those commands are useful on their own, but scripting them creates a more reliable operational workflow. The result is better repeatability, clearer verification, and a smoother path from manual experimentation to disciplined infrastructure practice.
 
-- faster
-- more consistent
-- easier to debug
-- easier to document
-- easier to reuse later
-
-This folder is where those manual checks start becoming an actual operator toolkit.
+This directory reflects that progression: from individual commands to reusable operator tools.
 
 ---
 
-## Current Goal
+## Scope
 
-Build a small set of practical scripts that answer questions like:
+The scripts in this folder focus on five operational areas:
 
-- Are my services up?
-- Are the expected ports listening?
-- Are Prometheus targets healthy?
-- Is disk space okay?
-- What do the latest logs say?
-- If I restart the node, does it recover properly?
+### 1. Node Health Checks
+Quick, single-run checks for service state, ports, system resources, and general node condition.
+
+### 2. Service Validation
+Targeted validation of individual services, including status, recent activity, and expected runtime behaviour.
+
+### 3. Log Inspection
+Shortcuts for reviewing recent logs or following live output from key services during sync, recovery, or troubleshooting.
+
+### 4. Recovery Workflows
+Controlled startup, shutdown, and restart procedures for the execution and consensus clients, with verification steps included.
+
+### 5. Monitoring Verification
+Checks that confirm the observability layer is functioning end to end, including Prometheus target health and key node metrics.
 
 ---
 
-## Planned Scripts
+## Script Inventory
 
-### `daily-check.sh`
+### `node-check.sh`
+Provides a fast operational snapshot of the local stack.
 
-Runs a quick daily health check for the node stack.
+Typical checks include:
 
-Expected checks:
-
-- Nethermind service status
-- Lighthouse service status
-- Prometheus service status
-- Grafana service status
-- Node Exporter service status
+- service activity
 - expected listening ports
 - disk usage
 - memory usage
-- uptime
-- optional Prometheus `up` query
+- system uptime
 
-This is the main single-glance script.
+This is the quickest way to confirm that the node environment is broadly healthy.
 
----
+### `service-validate.sh`
+Performs deeper service-level validation for the main stack components.
 
-### `tail-node-logs.sh`
+This includes:
 
-Shows recent logs for key services.
+- `systemctl is-active`
+- service status inspection
+- recent journal output
 
-Expected targets:
+Useful when a service appears active but needs closer verification.
 
-- Nethermind
-- Lighthouse
+### `quick-logs.sh`
+Displays recent logs for a selected service.
 
-Useful for quickly checking:
+Designed for fast inspection of recent behaviour without switching to longer-form log browsing.
 
-- sync behaviour
-- errors
-- warnings
-- recent restart activity
+### `live-logs.sh`
+Follows live logs for a selected service.
 
----
+Useful during restart testing, sync observation, and active troubleshooting.
 
-### `restart-node-stack.sh`
+### `startup-services.sh`
+Starts the execution and consensus clients in the intended order and verifies recovery.
 
-Restarts the node stack in a controlled way and verifies recovery.
+Includes service checks and expected port validation.
 
-Expected behaviour:
+### `shutdown-services.sh`
+Stops the node services cleanly and confirms they are no longer active.
 
-- restart services
-- check status afterward
-- confirm ports are listening again
-- optionally confirm Prometheus scrape health
+Useful when pausing node activity without shutting down the entire WSL environment.
 
-Useful for practicing service recovery and building operational confidence.
+### `restart-services.sh`
+Restarts the core node services and verifies that the stack recovers cleanly.
 
----
+Includes service checks, port checks, and monitoring checks.
+
+### `shutdown-and-exit-wsl.sh`
+Stops node services cleanly and then shuts down the WSL environment.
+
+Useful when reclaiming local system resources, such as before gaming or other high-load desktop use.
 
 ### `metrics-check.sh`
+Validates the monitoring chain and confirms that key metrics remain queryable.
 
-Runs quick checks against Prometheus or metrics endpoints.
+Current checks include:
 
-Expected checks:
+- Prometheus reachability
+- scrape target health
+- `up` status for expected jobs
+- Nethermind JSON-RPC block height
+- peer count
+- sync status
+- Lighthouse sync state
+- head slot and slot lag
 
-- target health
-- `up` metrics
-- optional peer / sync / block lag values
-
-Useful for confirming that monitoring is still alive end-to-end.
+This script verifies not only that monitoring services are running, but that they are returning meaningful operational data.
 
 ---
 
-## Design Principles
+## Design Approach
 
-These scripts should be:
+This tooling is intentionally lightweight.
 
-- simple
+The goal is not to build a large automation framework, but to create a practical Bash-based control layer around common node operations. Each script is designed to be:
+
 - readable
-- safe
-- reusable
-- easy to run manually
+- small in scope
+- directly runnable
+- easy to validate manually
+- close to the underlying Linux and node commands
 
-This folder is intentionally Bash-first.
-
-Why Bash:
-
-- it fits Linux operations naturally
-- it works directly with system tools
-- it keeps the automation close to the commands being learned
-- it is a good first step before heavier tools like Python, Ansible, or Terraform
+Bash is a natural fit for this stage of the project because it keeps the automation close to the system itself. It also provides a strong foundation before moving into heavier tooling such as Python, Ansible, or Terraform.
 
 ---
 
-## Example Operator Commands Behind the Scripts
+## Operational Model
 
-These scripts are expected to wrap commands like:
+These scripts wrap and standardize commands commonly used during node operation, including:
 
-### Service checks
+### Service management
 
     systemctl status nethermind --no-pager
     systemctl status lighthouse-beacon --no-pager
@@ -157,461 +158,111 @@ These scripts are expected to wrap commands like:
     systemctl status grafana-server --no-pager
     systemctl status prometheus-node-exporter --no-pager
 
-### Recent logs
+### Log inspection
 
     journalctl -u nethermind -n 50 --no-pager
     journalctl -u lighthouse-beacon -n 50 --no-pager
-
-### Port checks
-
-    ss -tulpn | grep -E '8551|6060|9100|9090|3000'
-
-### Disk checks
-
-    df -h /
-
-### Memory checks
-
-    free -h
-
-### Prometheus health query
-
-    curl -s "http://127.0.0.1:9090/api/v1/query?query=up"
-
----
-
-## How to Write Bash Scripts for This Folder
-
-The easiest way to learn Bash scripting is to treat each script like a saved operator checklist.
-
-A good Bash script usually has these parts:
-
-1. a shebang so Linux knows how to run it
-2. a small set of variables
-3. clear printed headings
-4. commands grouped by purpose
-5. simple pass/fail checks where helpful
-6. readable output that helps during real troubleshooting
-
-### Basic Script Structure
-
-Example layout:
-
-    #!/usr/bin/env bash
-
-    echo "Starting daily node check..."
-    echo
-
-    systemctl status nethermind --no-pager
-    echo
-    systemctl status lighthouse-beacon --no-pager
-
-### Make Scripts Executable
-
-After creating a script:
-
-    chmod +x daily-check.sh
-
-Then run it with:
-
-    ./daily-check.sh
-
-Or:
-
-    bash daily-check.sh
-
-### Helpful Bash Building Blocks
-
-#### 1. Variables
-
-Use variables to avoid repeating values:
-
-    NETHERMIND_SERVICE="nethermind"
-    LIGHTHOUSE_SERVICE="lighthouse-beacon"
-    PROM_URL="http://127.0.0.1:9090"
-
-#### 2. Functions
-
-Functions help keep scripts tidy:
-
-    check_service() {
-        local service_name="$1"
-        echo "=== $service_name ==="
-        systemctl is-active "$service_name"
-        echo
-    }
-
-#### 3. Condition Checks
-
-Use `if` statements to mark success or failure:
-
-    if systemctl is-active --quiet nethermind; then
-        echo "Nethermind: OK"
-    else
-        echo "Nethermind: NOT RUNNING"
-    fi
-
-#### 4. Grouping Output
-
-Use headings so the script reads like a checklist:
-
-    echo "=== SERVICES ==="
-    echo "=== PORTS ==="
-    echo "=== DISK ==="
-    echo "=== MEMORY ==="
-
-#### 5. Command Exit Status
-
-Many Linux commands return success or failure silently. Bash can use that:
-
-    if curl -s http://127.0.0.1:9090/-/healthy >/dev/null; then
-        echo "Prometheus reachable"
-    else
-        echo "Prometheus not reachable"
-    fi
-
----
-
-## How to Write Each Type of Script
-
-### 1. Daily Node Checks
-
-A daily check script should answer:
-
-- are services running?
-- are ports listening?
-- is disk space okay?
-- is memory okay?
-- is uptime normal?
-- are monitoring targets reachable?
-
-A simple layout:
-
-    #!/usr/bin/env bash
-
-    echo "=== SERVICES ==="
-    systemctl is-active nethermind
-    systemctl is-active lighthouse-beacon
-    systemctl is-active prometheus
-    systemctl is-active grafana-server
-    systemctl is-active prometheus-node-exporter
-
-    echo
-    echo "=== PORTS ==="
-    ss -tulpn | grep -E '8551|6060|9100|9090|3000'
-
-    echo
-    echo "=== DISK ==="
-    df -h /
-
-    echo
-    echo "=== MEMORY ==="
-    free -h
-
-    echo
-    echo "=== UPTIME ==="
-    uptime
-
-What this script teaches:
-
-- how to group checks
-- how to create repeatable operational habits
-- how to turn scattered commands into a daily workflow
-
----
-
-### 2. Service Validation
-
-A service validation script should confirm a service is not only installed, but actively working.
-
-Good service validation includes:
-
-- `systemctl is-active`
-- `systemctl status`
-- checking expected ports
-- checking logs for recent activity
-
-Example pattern:
-
-    validate_service() {
-        local service_name="$1"
-        echo "=== Validating $service_name ==="
-
-        if systemctl is-active --quiet "$service_name"; then
-            echo "$service_name is active"
-        else
-            echo "$service_name is NOT active"
-        fi
-
-        systemctl status "$service_name" --no-pager | head -n 15
-        echo
-    }
-
-This is useful because a service can exist in systemd but still be unhealthy, restarting, or misconfigured.
-
----
-
-### 3. Quick Log Inspection
-
-A log script should help you get signal fast.
-
-The idea is not to dump everything. The idea is to show the most recent useful logs.
-
-Example:
-
-    #!/usr/bin/env bash
-
-    echo "=== Nethermind Logs ==="
-    journalctl -u nethermind -n 50 --no-pager
-
-    echo
-    echo "=== Lighthouse Logs ==="
-    journalctl -u lighthouse-beacon -n 50 --no-pager
-
-Useful variations:
-
     journalctl -u nethermind -f
     journalctl -u lighthouse-beacon -f
 
-What this script teaches:
+### Port verification
 
-- how to inspect recent events
-- how to separate normal activity from warnings and failures
-- how to use logs as part of daily operations
+    ss -tulpn | grep -E '8551|6060|5054|9100|9090|3000'
 
----
+### Resource checks
 
-### 4. Restart and Recovery Workflows
+    df -h /
+    free -h
+    uptime
 
-A restart script should not just restart things blindly. It should restart and then verify recovery.
+### Monitoring and metrics queries
 
-Example flow:
+    curl -s http://127.0.0.1:9090/-/healthy
+    curl -s http://127.0.0.1:9090/api/v1/targets
+    curl -s http://127.0.0.1:9090/api/v1/query?query=up
 
-1. restart service
-2. wait briefly
-3. check service status
-4. check ports
-5. check logs
-6. optionally check monitoring health
+### Nethermind JSON-RPC
 
-Example:
-
-    #!/usr/bin/env bash
-
-    echo "Restarting Nethermind..."
-    sudo systemctl restart nethermind
-    sleep 5
-
-    echo "Restarting Lighthouse..."
-    sudo systemctl restart lighthouse-beacon
-    sleep 5
-
-    echo
-    echo "=== SERVICE STATUS ==="
-    systemctl is-active nethermind
-    systemctl is-active lighthouse-beacon
-
-    echo
-    echo "=== PORTS ==="
-    ss -tulpn | grep -E '8551|6060'
-
-This teaches an important operator lesson:
-
-> recovery is not the restart itself  
-> recovery is proving the system came back cleanly
+    curl -s -H "Content-Type: application/json" \
+      -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
+      http://127.0.0.1:8545
 
 ---
 
-### 5. Metrics and Health Verification
+## Environment
 
-A metrics-check script should prove monitoring still works from end to end.
+These scripts are currently designed around the local environment used in this repository:
 
-Good checks include:
+- Ubuntu on WSL2
+- `systemd`-managed services
+- Nethermind as the execution client
+- Lighthouse as the consensus client
+- Prometheus for metrics collection
+- Grafana for dashboards
+- node exporter for host-level metrics
 
-- is Prometheus reachable?
-- does the `up` query return expected values?
-- are scrape targets healthy?
-- can key metrics be queried?
-
-Example:
-
-    #!/usr/bin/env bash
-
-    PROM_URL="http://127.0.0.1:9090"
-
-    echo "=== PROMETHEUS TARGETS ==="
-    curl -s "$PROM_URL/api/v1/targets" | grep -E '"health"|"job"'
-
-    echo
-    echo "=== UP QUERY ==="
-    curl -s "$PROM_URL/api/v1/query?query=up"
-
-Useful later additions:
-
-- Lighthouse sync metric
-- Nethermind peer count
-- Nethermind block lag
-- node exporter target health
-
-This teaches how to verify the whole monitoring chain, not just the service process.
+Service names, ports, and endpoints are based on the current local stack and may need adjustment if the environment changes.
 
 ---
 
-## How to Implement These Scripts in This Repo
+## Usage
 
-### Suggested Folder Structure
+Make scripts executable once:
 
-    scripts/
-    ├── README.md
-    ├── daily-check.sh
-    ├── tail-node-logs.sh
-    ├── restart-node-stack.sh
-    └── metrics-check.sh
+    chmod +x *.sh
 
-### Suggested Workflow
+Run them directly from this folder, for example:
 
-1. create the script
-2. make it executable
-3. test it manually
-4. improve the output
-5. document what it checks
-6. commit it to the repo
-
-Example:
-
-    cd scripts
-    touch daily-check.sh
-    chmod +x daily-check.sh
-    ./daily-check.sh
-
-### Suggested README Style for Each Script
-
-For each script, document:
-
-- what it does
-- why it exists
-- what commands it wraps
-- how to run it
-- what good output looks like
-- what failures might mean
-
-Example section:
-
-#### `daily-check.sh`
-
-Purpose:
-
-- runs a quick daily health check for the node stack
-
-Checks:
-
-- service state
-- ports
-- disk
-- memory
-- uptime
-- optional Prometheus health
-
-Run with:
-
-    ./daily-check.sh
-
-Why it matters:
-
-- gives a single-glance view of node health
-- reduces repeated manual commands
-- helps build operator habits
-
----
-
-## Example README Sections You Can Add Later
-
-### Usage
-
-    chmod +x daily-check.sh tail-node-logs.sh restart-node-stack.sh metrics-check.sh
-
-    ./daily-check.sh
-    ./tail-node-logs.sh
+    ./node-check.sh
+    ./service-validate.sh
+    ./quick-logs.sh nethermind
+    ./live-logs.sh lighthouse-beacon
+    ./startup-services.sh
+    ./shutdown-services.sh
+    ./restart-services.sh
     ./metrics-check.sh
 
-### Notes
-
-- some scripts may require `sudo`
-- scripts are designed for Ubuntu on WSL2
-- service names should match the local systemd unit names
-- ports and endpoints may need adjusting if the stack changes
-
-### Future Improvements
-
-- colored output
-- error counting
-- automatic pass/fail summary
-- JSON parsing with `jq`
-- alert-style exit codes
-- optional email or webhook notifications
-- safer restart ordering and dependency checks
-
----
-
-## Learning Focus
-
-This folder is not just about automation. It is also about learning:
-
-- how to structure small Bash scripts
-- how to use variables
-- how to use functions
-- how to check command success and failure
-- how to print clear operator-friendly output
-- how to make manual workflows repeatable
-- how to think in terms of operational runbooks
+Some scripts require `sudo` because they interact with `systemd` services.
 
 ---
 
 ## Why This Matters
 
-Scripting is the bridge between:
+This directory is part of a broader shift from manual command execution to repeatable infrastructure practice.
 
-- knowing commands
-- and operating systems with confidence
+Knowing the right commands is useful. Packaging those commands into clean, reusable operational tools is better.
 
-A strong infrastructure engineer does not just know what to type.
+That transition matters because strong infrastructure work is not only about knowing what to type. It is also about making common tasks repeatable, making verification quicker, and reducing friction during recovery and troubleshooting.
 
-They also know how to:
-
-- package common checks
-- reduce repetition
-- standardize workflows
-- make troubleshooting faster
-- document operational habits clearly
-
-That is what this folder is for.
+This folder represents that layer of the project.
 
 ---
 
-## Status
+## Current Status
 
-This folder is currently being built as part of the next stage of the project:
+The scripting layer is now in active use as part of the broader Ethereum node and monitoring buildout.
 
-- node setup ✅
-- monitoring ✅
-- dashboards ✅
-- documentation ✅
-- scripting ⏳
+Current project progress:
+
+- node setup completed
+- monitoring stack completed
+- dashboards completed
+- documentation completed
+- scripting layer implemented
 
 ---
 
-## Next Step
+## Next Direction
 
-Start with:
+The next step for this directory is refinement rather than expansion.
 
-- `daily-check.sh`
+Likely areas for future improvement include:
 
-That script will become the first reusable operator health-check tool in this repository.
+- cleaner pass/fail summaries
+- optional colorized output
+- more defensive error handling
+- tighter metric parsing
+- richer service dependency checks
+- clearer exit codes for automation use later
 
-After that, build:
-
-- `tail-node-logs.sh`
-- `metrics-check.sh`
-- `restart-node-stack.sh`
-
-That will give this repo its first real operator automation layer.
+For now, the focus remains on keeping the scripts practical, readable, and genuinely useful during real node operations.
