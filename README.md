@@ -2,13 +2,13 @@
 
 A hands-on infrastructure portfolio focused on Ethereum node operations, Linux systems work, observability, and service reliability.
 
-This repository documents the design, operation, monitoring, and troubleshooting of a live Ethereum node stack running on Ubuntu via WSL2, using Nethermind, Lighthouse, Prometheus, Grafana, and Node Exporter. It is built as an operator-facing playbook that captures real system behaviour, real failure modes, and the workflows used to validate and recover services.
+This repository documents the deployment, operation, monitoring, troubleshooting, and recovery of a live Ethereum node stack running on Ubuntu via WSL2, using Nethermind, Lighthouse, Prometheus, Grafana, and Node Exporter. It is structured as an operator-facing playbook that captures real system behaviour, real failure modes, and the workflows used to validate, recover, and monitor services with confidence.
 
 ---
 
 ## Overview
 
-This project is designed around practical infrastructure work rather than theory alone.
+This project is built around practical infrastructure work rather than theory alone.
 
 It focuses on:
 
@@ -19,7 +19,7 @@ It focuses on:
 - documenting repeatable operational workflows
 - turning manual node operations into structured runbooks and Bash tooling
 
-The broader goal is to develop production-style infrastructure habits through direct hands-on operation.
+The broader goal is to develop production-style infrastructure habits through direct, hands-on systems work.
 
 ---
 
@@ -104,11 +104,11 @@ The broader goal is to develop production-style infrastructure habits through di
 This repository demonstrates practical capability in:
 
 - running and managing a multi-service blockchain infrastructure stack
-- operating execution and consensus clients together with correct service dependency flow
+- operating execution and consensus clients together with the correct service dependency flow
 - securing execution-consensus communication using JWT-authenticated Engine API access
 - validating services using system state, ports, logs, APIs, and metrics
 - building observability across host, consensus, and execution layers
-- debugging service interaction, scrape health, endpoint readiness, and startup timing issues
+- debugging service interaction, scrape health, endpoint readiness, startup timing, and storage path issues
 - documenting real operational behaviour in a structured and reusable way
 
 ---
@@ -141,7 +141,7 @@ This repository demonstrates practical capability in:
 
         /mnt/n/nethermind-data
 
-- Nethermind pruning configured in hybrid mode with volume-based trigger
+- Nethermind pruning configured in hybrid mode with a volume-based trigger
 - Lighthouse data stored at:
 
         /var/lib/lighthouse
@@ -308,6 +308,24 @@ These artifacts are included to show that the stack is not only configured, but 
 
 ---
 
+## Incident Handling & Troubleshooting
+
+A major part of this project is the direct handling of real infrastructure incidents rather than idealized setup alone.
+
+Examples of issues worked through in this repository include:
+
+- JWT permission and Engine API connectivity problems
+- Prometheus scrape validation and API endpoint confusion
+- WSL resource pressure and `.wslconfig` tuning
+- startup timing and endpoint readiness issues across services
+- browser-to-WSL access path problems
+- duplicate Nethermind database storage filling the Linux root filesystem
+- recovery of the execution-consensus stack after storage misconfiguration
+
+This has been valuable because it shifts the project from “service installation” into actual operational troubleshooting.
+
+---
+
 ## Key Practical Learnings
 
 Some of the main operational takeaways from this project so far:
@@ -323,7 +341,9 @@ Some of the main operational takeaways from this project so far:
 - block processing time is a useful performance signal for execution health
 - disk behaviour matters for node performance, even when CPU usage appears normal
 - grouping observability by host, network, storage, consensus, and execution speeds up troubleshooting
+- mounted storage is only useful if the service is actually configured to write to it
 - WSL-mounted filesystems behave differently from native Linux filesystems, which affects how storage should be interpreted and monitored
+- validating a service means more than checking that a process exists; ports, logs, metrics, and runtime behaviour matter too
 
 ---
 
@@ -340,7 +360,7 @@ Some of the main operational takeaways from this project so far:
 - dashboards built for host, network, storage, Lighthouse, and Nethermind
 - Prometheus API-level checks implemented
 - operational Bash tooling implemented for validation and recovery
-- real debugging performed across logs, ports, JWT permissions, scrape health, and service readiness
+- real debugging performed across logs, ports, JWT permissions, scrape health, service readiness, and storage-path recovery
 
 ### In Progress
 - strengthening monitoring and alert-style thinking
