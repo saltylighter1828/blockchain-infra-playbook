@@ -1,4 +1,4 @@
-# 🚀 Blockchain Infra Playbook
+# Blockchain Infra Playbook
 
 A hands-on infrastructure portfolio focused on Ethereum node operations, Linux systems work, observability, and service reliability.
 
